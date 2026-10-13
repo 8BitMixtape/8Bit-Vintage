@@ -58,5 +58,35 @@
     ],
     "flash_bytes": 5280,
     "wav_bytes": 1146644
+  },
+  {
+    "id": "minimal_techno",
+    "source": "minimal_techno.cpp",
+    "title": "Minimal Techno",
+    "tagline": "Hypnotic rolling basslines & tight minimal groove",
+    "description": "Rolling sub-bass sequencer with 4 patterns (Deep Minimal, Rolling Bass, Sparse Sub, Driving Techno). Left pot controls filter cutoff, right pot selects patterns (or adjust tempo in shift mode).",
+    "tags": [
+      "minimal",
+      "techno",
+      "rolling-bass",
+      "groove"
+    ],
+    "flash_bytes": 4254,
+    "wav_bytes": 934292
+  },
+  {
+    "id": "deep_minimal",
+    "source": "deep_minimal.cpp",
+    "title": "Deep Minimal",
+    "tagline": "Sub-heavy plucks & stripped-down micro-grooves",
+    "description": "Plucky off-beat sub basslines and syncopated percussion for deep late-night techno. Macro knob controls cutoff & decay, right pot sets pattern or BPM in shift mode.",
+    "tags": [
+      "minimal",
+      "deep",
+      "sub-bass",
+      "micro-house"
+    ],
+    "flash_bytes": 3968,
+    "wav_bytes": 867932
   }
 ]

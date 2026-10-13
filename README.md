@@ -3,7 +3,7 @@
 Sound applications for the **8Bit Mixtape** (ATtiny85), uploaded via audio
 using the AudioBoot bootloader.
 
-## Sound apps
+## Sound Apps Catalog
 
 | Sketch | Description | Docs |
 |---|---|---|
@@ -11,10 +11,12 @@ using the AudioBoot bootloader.
 | `peepsy_acid.cpp` | TB-303 style acid bassline & drum sequencer | - |
 | `flappy_slider.cpp` | Interactive obstacle game with chiptune sound effects | - |
 | `bass_patterns.cpp` | Punchy 808 sub-bass, kicks, snares & rhythm generator | - |
+| `minimal_techno.cpp` | Hypnotic rolling basslines & tight minimal techno groove | - |
+| `deep_minimal.cpp` | Sub-heavy plucks & stripped-down micro-grooves | - |
 
 ## Web Audio Player & Flasher
 
-Flash your 8Bit Mixtape straight from your browser:
+Pre-listen to each synth and flash your 8Bit Mixtape straight from your browser:
 **https://8bitmixtape.github.io/8Bit-Vintage/**
 
 ## Hardware
@@ -23,7 +25,7 @@ Flash your 8Bit Mixtape straight from your browser:
 - 8-bit PWM audio output
 - WS2812B NeoPixels
 
-## Build & upload
+## Build & Upload
 
 1. Pick the sketch in `platformio.ini` under `build_src_filter`.
 2. Build: `pio run` — produces `.pio/build/attiny85/firmware.hex` and `.wav`.
@@ -42,5 +44,5 @@ include/   shared headers
 lib/       vendored 8Bit-Mixtape-NEO-Lib
 scripts/   hex2wav post-build script & WAV/preview generators
 tools/     hex2wav converters
-docs/      web player (GitHub Pages) & manuals
+docs/      web player (GitHub Pages), audio demos, GIFs & manuals
 ```

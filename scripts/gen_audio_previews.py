@@ -327,3 +327,196 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ---------------------------------------------------------------------------
+# 5. Minimal Techno: Rolling 16th-note sub bassline with resonant filter & 4x4 kick
+# ---------------------------------------------------------------------------
+def synth_minimal_techno():
+    sample_rate = 15600
+    P_C2 = 137; P_Eb2 = 163; P_F2 = 183; P_C3 = 274
+    # Pattern 1: Rolling Bass
+    pitches = [P_C2, P_Eb2, P_C2, P_C2, P_Eb2, P_C2, P_C2, P_Eb2, P_C2, P_F2, P_C2, P_C2, P_Eb2, P_C2, P_C2, P_F2]
+    drums   = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2] # Kick (1) and offbeat hat (2)
+
+    step_duration = 0.120 # ~125 BPM
+    samples_per_step = int(sample_rate * step_duration)
+    total_steps = 32 # 2 bars
+    total_samples = samples_per_step * total_steps
+    samples = bytearray(total_samples)
+
+    bass_phase = 0
+    filter_val = 0.0
+    filter_vel = 0.0
+    drum_phase = 0
+    drum_pitch = 0
+    drum_env = 0
+    drum_type = 0
+    lfsr = 0xACE1
+
+    sample_idx = 0
+    for step in range(total_steps):
+        s_idx = step % 16
+        d = drums[s_idx]
+        if d == 1:
+            drum_type = 0
+            drum_pitch = 1000
+            drum_env = 255
+        elif d == 2:
+            drum_type = 1
+            drum_env = 100
+
+        bass_pitch = pitches[s_idx]
+        bass_env = 180 if (s_idx % 2 == 1) else 100
+
+        for _ in range(samples_per_step):
+            if (sample_idx & 7) == 0:
+                if bass_env > 2: bass_env -= 3
+                else: bass_env = 0
+                if drum_type == 0:
+                    if drum_env > 0: drum_env -= 1
+                else:
+                    if drum_env > 7: drum_env -= 8
+                    else: drum_env = 0
+
+            if lfsr & 1: lfsr = (lfsr >> 1) ^ 0xB400
+            else: lfsr >>= 1
+
+            bass_phase = (bass_phase + (bass_pitch << 1)) & 0xFFFF
+            raw_wave = (bass_phase >> 8) - 128
+
+            cutoff = 75 + (bass_env >> 1)
+            cutoff = max(10, min(190, cutoff))
+
+            diff = raw_wave - filter_val
+            drive = (diff * (cutoff >> 1)) / 128.0
+            filter_vel += drive
+            filter_vel -= (filter_vel * 28.0) / 256.0
+            filter_val += filter_vel
+            filter_val = max(-300.0, min(300.0, filter_val))
+
+            outA = int(filter_val + 128)
+            outA = max(0, min(255, outA))
+
+            outB = 0
+            if drum_type == 0:
+                drum_phase = (drum_phase + (drum_pitch << 1)) & 0xFFFF
+                if drum_pitch > 30: drum_pitch -= 2
+                kw = drum_phase >> 8
+                if drum_phase & 0x8000: kw = 255 - kw
+                outB = (kw * drum_env) >> 8
+            else:
+                outB = ((lfsr & 0xFF) * drum_env) >> 8
+
+            mixed = max(-128, min(127, (outA - 128) + outB))
+            samples[sample_idx] = (mixed + 128) & 0xFF
+            sample_idx += 1
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 6. Deep Minimal: Plucky off-beat sub bass & stripped-down micro percussion
+# ---------------------------------------------------------------------------
+def synth_deep_minimal():
+    sample_rate = 15600
+    P_C2 = 137; P_Eb2 = 163
+    # Off-beat plucks
+    pitches = [0, 0, P_C2, 0, 0, 0, P_C2, 0, 0, 0, P_Eb2, 0, 0, 0, P_C2, 0]
+    drums   = [1, 0, 2,    0, 1, 0, 2,    0, 1, 0, 2,     0, 1, 0, 2,    0]
+
+    step_duration = 0.125
+    samples_per_step = int(sample_rate * step_duration)
+    total_steps = 32
+    total_samples = samples_per_step * total_steps
+    samples = bytearray(total_samples)
+
+    bass_phase = 0
+    filter_val = 0.0
+    filter_vel = 0.0
+    drum_phase = 0
+    drum_pitch = 0
+    drum_env = 0
+    drum_type = 0
+    lfsr = 0xACE1
+
+    sample_idx = 0
+    for step in range(total_steps):
+        s_idx = step % 16
+        d = drums[s_idx]
+        if d == 1:
+            drum_type = 0
+            drum_pitch = 1000
+            drum_env = 240
+        elif d == 2:
+            drum_type = 1
+            drum_env = 80
+
+        p = pitches[s_idx]
+        bass_env = 240 if (p > 0) else 0
+
+        for _ in range(samples_per_step):
+            if (sample_idx & 7) == 0:
+                if bass_env > 3: bass_env -= 4
+                else: bass_env = 0
+                if drum_type == 0:
+                    if drum_env > 0: drum_env -= 1
+                else:
+                    if drum_env > 9: drum_env -= 10
+                    else: drum_env = 0
+
+            if lfsr & 1: lfsr = (lfsr >> 1) ^ 0xB400
+            else: lfsr >>= 1
+
+            raw_wave = 0
+            if p > 0:
+                bass_phase = (bass_phase + (p << 1)) & 0xFFFF
+                raw_wave = (bass_phase >> 8) - 128
+
+            cutoff = 55 + (bass_env >> 1)
+            cutoff = max(10, min(160, cutoff))
+
+            diff = raw_wave - filter_val
+            drive = (diff * (cutoff >> 1)) / 128.0
+            filter_vel += drive
+            filter_vel -= (filter_vel * 32.0) / 256.0
+            filter_val += filter_vel
+            filter_val = max(-300.0, min(300.0, filter_val))
+
+            outA = int(filter_val + 128)
+            outA = max(0, min(255, outA))
+
+            outB = 0
+            if drum_type == 0:
+                drum_phase = (drum_phase + (drum_pitch << 1)) & 0xFFFF
+                if drum_pitch > 30: drum_pitch -= 2
+                kw = drum_phase >> 8
+                if drum_phase & 0x8000: kw = 255 - kw
+                outB = (kw * drum_env) >> 8
+            else:
+                outB = ((lfsr & 0xFF) * drum_env) >> 8
+
+            mixed = max(-128, min(127, (outA - 128) + outB))
+            samples[sample_idx] = (mixed + 128) & 0xFF
+            sample_idx += 1
+
+    return samples, sample_rate
+
+def main():
+    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    synths = [
+        ("drone_synth", synth_drone),
+        ("peepsy_acid", synth_acid),
+        ("flappy_slider", synth_flappy),
+        ("bass_patterns", synth_bass_patterns),
+        ("minimal_techno", synth_minimal_techno),
+        ("deep_minimal", synth_deep_minimal),
+    ]
+
+    for name, fn in synths:
+        samples, rate = fn()
+        out = AUDIO_DIR / f"{name}.mp3"
+        write_wav_to_mp3(samples, rate, out)
+
+
+if __name__ == "__main__":
+    main()
