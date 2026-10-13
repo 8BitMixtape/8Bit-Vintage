@@ -13,5 +13,50 @@
     "manual": "DRONE_SYNTH_MANUAL.md",
     "flash_bytes": 6760,
     "wav_bytes": 1451900
+  },
+  {
+    "id": "peepsy_acid",
+    "source": "peepsy_acid.cpp",
+    "title": "Peepsy Acid",
+    "tagline": "TB-303 style acid bassline & drum sequencer",
+    "description": "303 resonant filter basslines with kick & hi-hats. Left pot controls filter cutoff resonance, right pot selects patterns (Classic Acid, Arpeggio, G-Minor Groove, Octave Jumps). Press button to play/stop.",
+    "tags": [
+      "acid",
+      "tb-303",
+      "drums",
+      "sequencer"
+    ],
+    "flash_bytes": 4064,
+    "wav_bytes": 894476
+  },
+  {
+    "id": "flappy_slider",
+    "source": "flappy_slider.cpp",
+    "title": "Flappy Slider",
+    "tagline": "Interactive obstacle game with chiptune sound effects",
+    "description": "Play Flappy Bird using the slider pot to control elevation and the left pot for speed! Features dynamic chiptune fanfare, pass sounds, collision sfx, and gap difficulty modes.",
+    "tags": [
+      "game",
+      "chiptune",
+      "interactive",
+      "flappy"
+    ],
+    "flash_bytes": 4708,
+    "wav_bytes": 1027196
+  },
+  {
+    "id": "bass_patterns",
+    "source": "bass_patterns.cpp",
+    "title": "Bass Patterns",
+    "tagline": "Punchy 808 sub-bass, kicks, snares & rhythm generator",
+    "description": "Algorithmic kick/sub-bass drum machine with snare noise. Left pot morphs between deep 808 sub-bass and laser zaps. Right button cycles 6 rhythm presets, left button generates random patterns.",
+    "tags": [
+      "bass",
+      "808",
+      "drum-machine",
+      "rhythm"
+    ],
+    "flash_bytes": 5280,
+    "wav_bytes": 1146644
   }
 ]

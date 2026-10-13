@@ -7,7 +7,15 @@ using the AudioBoot bootloader.
 
 | Sketch | Description | Docs |
 |---|---|---|
-| `drone_synth.cpp` | Drone synthesizer | [Manual](docs/DRONE_SYNTH_MANUAL.md) |
+| `drone_synth.cpp` | Dual-oscillator drone synthesizer with generative plasma visuals | [Manual](docs/DRONE_SYNTH_MANUAL.md) |
+| `peepsy_acid.cpp` | TB-303 style acid bassline & drum sequencer | - |
+| `flappy_slider.cpp` | Interactive obstacle game with chiptune sound effects | - |
+| `bass_patterns.cpp` | Punchy 808 sub-bass, kicks, snares & rhythm generator | - |
+
+## Web Audio Player & Flasher
+
+Flash your 8Bit Mixtape straight from your browser:
+**https://8bitmixtape.github.io/8Bit-Vintage/**
 
 ## Hardware
 
@@ -32,7 +40,7 @@ in `tools/hex2wav/`).
 src/       sound app sketches (one main file selected at a time)
 include/   shared headers
 lib/       vendored 8Bit-Mixtape-NEO-Lib
-scripts/   hex2wav post-build script
+scripts/   hex2wav post-build script & WAV/preview generators
 tools/     hex2wav converters
-docs/      manuals
+docs/      web player (GitHub Pages) & manuals
 ```

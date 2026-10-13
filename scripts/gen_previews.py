@@ -4,10 +4,6 @@ Render animated GIF previews of the 5x4 LED matrix for each sound app into
 docs/gifs/<id>.gif, using the same cell style as the old emulator
 (30x24 px cells with a 1 px dark border -> 150x96 GIF).
 
-Each app's visual is a small Python port of the sketch's LED code, registered
-in RENDERERS below. Apps without a renderer are skipped (the web page simply
-shows no preview for them).
-
 Usage:
   python3 scripts/gen_previews.py              # all apps with a renderer
   python3 scripts/gen_previews.py drone_synth  # selected ids
@@ -44,7 +40,7 @@ def render_frame(pixels):
 
 
 # ---------------------------------------------------------------------------
-# drone_synth.cpp — "Trickster Plasma", cycling through the 4 modes/themes
+# 1. drone_synth.cpp — "Trickster Plasma" cycling through 4 modes
 # ---------------------------------------------------------------------------
 DRONE_THEMES = [
     ((30, 15, 0), (255, 220, 60)),   # 0 Triangle  - yellow/brown
@@ -55,8 +51,8 @@ DRONE_THEMES = [
 
 
 def drone_synth_frames():
-    frames_per_mode = 60          # 3 s per mode at 50 ms/frame
-    speed, zoom = 1.0, 1.5        # defaults (smoothSpeed / smoothZoom)
+    frames_per_mode = 30          # 1.5 s per mode at 50 ms/frame
+    speed, zoom = 1.0, 1.5
     p1 = p2 = p3 = 0.0
     frames = []
     for mode, (dark, bright) in enumerate(DRONE_THEMES):
@@ -85,8 +81,150 @@ def drone_synth_frames():
     return frames, 50
 
 
+# ---------------------------------------------------------------------------
+# 2. peepsy_acid.cpp — TB-303 Acid sequencer (Red/White flash + pattern bar)
+# ---------------------------------------------------------------------------
+def peepsy_acid_frames():
+    drum_seq = [1, 0, 2, 0, 1, 0, 2, 0, 1, 2, 2, 1, 1, 0, 2, 2] # 1=Kick, 2=Hat, 0=Rest
+    accents  = [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]
+    frames = []
+
+    for step in range(16):
+        d = drum_seq[step]
+        acc = accents[step]
+        bass_vis = 140 if acc else 70
+        drum_vis = 130 if d == 1 else (60 if d == 2 else 0)
+
+        # Subframe 1: Strike / Attack
+        rows = []
+        for y in range(MATRIX_H):
+            row = []
+            for x in range(MATRIX_W):
+                if x == 4:
+                    # Pattern indicator: selected pattern (row 0) is white, rest dark red
+                    row.append((255, 255, 255) if y == 0 else (30, 0, 0))
+                else:
+                    r = min(255, bass_vis + drum_vis)
+                    g = drum_vis
+                    b = drum_vis
+                    row.append((r, g, b))
+            rows.append(row)
+        frames.append(render_frame(rows))
+
+        # Subframe 2: Decay
+        bass_decay = bass_vis // 2
+        drum_decay = drum_vis // 4
+        rows_decay = []
+        for y in range(MATRIX_H):
+            row = []
+            for x in range(MATRIX_W):
+                if x == 4:
+                    row.append((255, 255, 255) if y == 0 else (30, 0, 0))
+                else:
+                    r = min(255, bass_decay + drum_decay)
+                    g = drum_decay
+                    b = drum_decay
+                    row.append((r, g, b))
+            rows_decay.append(row)
+        frames.append(render_frame(rows_decay))
+
+    return frames, 60
+
+
+# ---------------------------------------------------------------------------
+# 3. flappy_slider.cpp — Flappy bird dodging pipes
+# ---------------------------------------------------------------------------
+def flappy_slider_frames():
+    frames = []
+    total_frames = 40
+    pipe_x = 4.5
+    pipe_gap_y = 1 # gap occupies y=1 and y=2
+
+    for f in range(total_frames):
+        pipe_x -= 0.25
+        if pipe_x < -1.0:
+            pipe_x = 4.5
+            pipe_gap_y = (pipe_gap_y % 2) + 1 # alternate gap 1 and 2
+
+        # Bird elevation oscillates smoothly between row 1 and 2
+        bird_y = 1 if (math.sin(f * 0.35) > 0) else 2
+        bird_x = 1
+
+        bg_col = (0, 10, 20)
+        wall_col = (0, 150, 0)
+        bird_col = (255, 220, 0)
+
+        rows = [[bg_col for _ in range(MATRIX_W)] for _ in range(MATRIX_H)]
+
+        # Draw pipe wall
+        px_int = int(round(pipe_x))
+        if 0 <= px_int < MATRIX_W:
+            for y in range(MATRIX_H):
+                if y != pipe_gap_y and y != (pipe_gap_y + 1):
+                    rows[y][px_int] = wall_col
+
+        # Draw bird
+        rows[bird_y][bird_x] = bird_col
+
+        frames.append(render_frame(rows))
+
+    return frames, 65
+
+
+# ---------------------------------------------------------------------------
+# 4. bass_patterns.cpp — 808 Sub-bass visualizer + snare corner flashes
+# ---------------------------------------------------------------------------
+def bass_patterns_frames():
+    # 16-step rhythm with kicks and snares
+    kicks  = [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0]
+    snares = [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]
+    frames = []
+
+    for step in range(16):
+        is_kick = kicks[step]
+        is_snare = snares[step]
+
+        # Strike frame
+        rows = [[(5, 5, 10) for _ in range(MATRIX_W)] for _ in range(MATRIX_H)]
+        if is_kick:
+            # Center column (x=2) fully lit (cyan/blue)
+            for y in range(4):
+                rows[y][2] = (0, 220, 255)
+            # Mid columns (x=1, x=3) bottom 3 lit (purple)
+            for y in range(1, 4):
+                rows[y][1] = (140, 40, 255)
+                rows[y][3] = (140, 40, 255)
+            # Outer columns (x=0, x=4) bottom 2 lit (magenta)
+            for y in range(2, 4):
+                rows[y][0] = (220, 0, 180)
+                rows[y][4] = (220, 0, 180)
+
+        if is_snare:
+            white = (240, 240, 240)
+            rows[0][0] = white
+            rows[0][1] = white
+            rows[0][3] = white
+            rows[0][4] = white
+
+        frames.append(render_frame(rows))
+
+        # Decay frame
+        rows_decay = [[(3, 3, 5) for _ in range(MATRIX_W)] for _ in range(MATRIX_H)]
+        if is_kick:
+            rows_decay[3][2] = (0, 100, 140)
+            rows_decay[3][1] = (60, 20, 120)
+            rows_decay[3][3] = (60, 20, 120)
+
+        frames.append(render_frame(rows_decay))
+
+    return frames, 55
+
+
 RENDERERS = {
     "drone_synth": drone_synth_frames,
+    "peepsy_acid": peepsy_acid_frames,
+    "flappy_slider": flappy_slider_frames,
+    "bass_patterns": bass_patterns_frames,
 }
 
 
