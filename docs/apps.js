@@ -104,7 +104,7 @@ window.APPS = [
       "liturgical",
       "soviet-star"
     ],
-    "flash_bytes": 3876,
+    "flash_bytes": 3872,
     "wav_bytes": 854660
   }
 ];
