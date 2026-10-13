@@ -68,6 +68,7 @@
     <button class="btn-stop" id="hipStop">Stop</button>
   </div>
 
+  <script src="apps.js"></script>
   <script>
     const REPO = 'https://github.com/8BitMixtape/8Bit-Vintage';
 
@@ -124,15 +125,14 @@
     }
     document.getElementById('hipStop').addEventListener('click', () => stopAllAudio());
 
-    async function init() {
+    function init() {
       const grid = document.getElementById('grid');
-      try {
-        const apps = await (await fetch('apps.json', { cache: 'no-cache' })).json();
-        grid.innerHTML = apps.map(renderCard).join('');
-      } catch (e) {
-        grid.innerHTML = '<p class="lead">Could not load apps.json — open this page via GitHub Pages or a local web server.</p>';
+      const apps = window.APPS;
+      if (!Array.isArray(apps)) {
+        grid.innerHTML = '<p class="lead">apps.js missing — run <code>python3 scripts/build_wavs.py</code>.</p>';
         return;
       }
+      grid.innerHTML = apps.map(renderCard).join('');
       grid.querySelectorAll('.card').forEach(card => {
         const btn = document.createElement('button');
         btn.className = 'btn-hip';
