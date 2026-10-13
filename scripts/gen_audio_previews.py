@@ -45,7 +45,7 @@ def write_wav_to_mp3(samples_uint8, sample_rate, out_mp3_path):
 
 
 # ---------------------------------------------------------------------------
-# 1. Drone Synth: Dual-oscillator with 4 audio modes (Triangle, Fuzz, Crush, RingMod)
+# 1. Drone Synth
 # ---------------------------------------------------------------------------
 def synth_drone():
     sample_rate = 10000
@@ -56,13 +56,10 @@ def synth_drone():
     phase1 = 0
     phase2 = 0
     base_pitch = 140.0
-    detune = 2.5 # slight beating
+    detune = 2.5
 
     for i in range(total_samples):
-        # 4 modes, 1.5s each
         mode = int((i / total_samples) * 4)
-
-        # Gentle pitch LFO
         lfo = math.sin(i * 0.003) * 3.0
         inc1 = int((base_pitch + lfo) * (65536.0 / sample_rate))
         inc2 = int((base_pitch + detune - lfo * 0.5) * (65536.0 / sample_rate))
@@ -70,12 +67,10 @@ def synth_drone():
         phase1 = (phase1 + inc1) & 0xFFFF
         phase2 = (phase2 + inc2) & 0xFFFF
 
-        # Triangle 1
         t1 = phase1 >> 8
         if t1 > 127: t1 = 255 - t1
         out1 = (t1 << 1) & 0xFF
 
-        # Triangle 2
         t2 = phase2 >> 8
         if t2 > 127: t2 = 255 - t2
         out2 = (t2 << 1) & 0xFF
@@ -95,18 +90,18 @@ def synth_drone():
 
 
 # ---------------------------------------------------------------------------
-# 2. Peepsy Acid: TB-303 lowpass resonant SVF filter, slides, accents, kick & hat
+# 2. Peepsy Acid
 # ---------------------------------------------------------------------------
 def synth_acid():
     sample_rate = 15600
     pitches = [137, 274, 137, 137, 274, 137, 205, 244, 137, 326, 137, 183, 274, 137, 326, 548]
     slides  = [0,   1,   0,   0,   0,   0,   1,   0,   0,   1,   0,   0,   0,   0,   1,   0]
     accents = [1,   0,   0,   1,   1,   0,   0,   1,   1,   0,   0,   1,   1,   0,   0,   1]
-    drums   = [1,   0,   2,   0,   1,   0,   2,   0,   1,   2,   2,   1,   1,   0,   2,   2] # 1=Kick, 2=Hat
+    drums   = [1,   0,   2,   0,   1,   0,   2,   0,   1,   2,   2,   1,   1,   0,   2,   2]
 
-    step_duration = 0.115 # 115 ms per step
+    step_duration = 0.115
     samples_per_step = int(sample_rate * step_duration)
-    total_steps = 32 # 2 bars
+    total_steps = 32
     total_samples = samples_per_step * total_steps
     samples = bytearray(total_samples)
 
@@ -126,7 +121,6 @@ def synth_acid():
     sample_idx = 0
     for step in range(total_steps):
         s_idx = step % 16
-        # Trigger drum
         d = drums[s_idx]
         if d == 1:
             drum_type = 0
@@ -136,7 +130,6 @@ def synth_acid():
             drum_type = 1
             drum_env = 120
 
-        # Trigger bass
         next_p = pitches[s_idx]
         if slides[s_idx]:
             bass_target_pitch = next_p
@@ -145,36 +138,26 @@ def synth_acid():
             bass_target_pitch = next_p
             bass_env = 255 if accents[s_idx] else 100
 
-        # Render step samples
         for _ in range(samples_per_step):
-            # Envelopes decay
             if (sample_idx & 7) == 0:
                 if bass_env > 1: bass_env -= 2
                 else: bass_env = 0
-
                 if drum_type == 0:
                     if drum_env > 0: drum_env -= 1
                 else:
                     if drum_env > 7: drum_env -= 8
                     else: drum_env = 0
 
-            # Pitch slide
             if (sample_idx & 15) == 0:
                 if bass_pitch < bass_target_pitch: bass_pitch += 2
                 elif bass_pitch > bass_target_pitch: bass_pitch -= 2
 
-            # Noise LFSR
-            if lfsr & 1:
-                lfsr = (lfsr >> 1) ^ 0xB400
-            else:
-                lfsr >>= 1
+            if lfsr & 1: lfsr = (lfsr >> 1) ^ 0xB400
+            else: lfsr >>= 1
 
-            # Bass oscillator (sawtooth)
             bass_phase = (bass_phase + (bass_pitch << 1)) & 0xFFFF
             raw_wave = (bass_phase >> 8) - 128
 
-            # SVF Filter
-            # Modulate cutoff over time for signature acid sweep
             sweep = math.sin((sample_idx / total_samples) * math.pi * 3) * 40.0
             cutoff = int(90 + sweep + (bass_env >> 1))
             cutoff = max(10, min(200, cutoff))
@@ -189,21 +172,17 @@ def synth_acid():
             outA = int(filter_val + 128)
             outA = max(0, min(255, outA))
 
-            # Drum oscillator
             outB = 0
-            if drum_type == 0: # Kick
+            if drum_type == 0:
                 drum_phase = (drum_phase + (drum_pitch << 1)) & 0xFFFF
                 if drum_pitch > 30: drum_pitch -= 2
                 kw = drum_phase >> 8
                 if drum_phase & 0x8000: kw = 255 - kw
                 outB = (kw * drum_env) >> 8
-            else: # Hat
+            else:
                 outB = ((lfsr & 0xFF) * drum_env) >> 8
 
-            sA = outA - 128
-            sB = outB
-            mixed = sA + sB
-            mixed = max(-128, min(127, mixed))
+            mixed = max(-128, min(127, (outA - 128) + outB))
             samples[sample_idx] = (mixed + 128) & 0xFF
             sample_idx += 1
 
@@ -211,7 +190,7 @@ def synth_acid():
 
 
 # ---------------------------------------------------------------------------
-# 3. Flappy Slider: Startup fanfare, pipe pass chirps, and score fanfare
+# 3. Flappy Slider
 # ---------------------------------------------------------------------------
 def synth_flappy():
     sample_rate = 15625
@@ -227,38 +206,32 @@ def synth_flappy():
                 val = 220 if ((i % period) < (period / 2)) else 36
                 frames.append(val)
 
-    # Startup boop-bloop slide
-    for i in range(10):
-        add_tone(200 + i * 100, 35)
-    for i in range(10, 20):
-        add_tone(1200 - (i - 10) * 90, 35)
+    for i in range(10): add_tone(200 + i * 100, 35)
+    for i in range(10, 20): add_tone(1200 - (i - 10) * 90, 35)
     add_tone(150, 90)
     add_tone(350, 130)
     add_tone(0, 150)
 
-    # Normal pipe passes
     for score in [1, 2, 3]:
         offset = score * 20
         add_tone(440 + offset, 15)
         add_tone(880 + offset, 15)
         add_tone(0, 250)
 
-    # Mini fanfare
-    for f in [440, 554, 659, 880]:
-        add_tone(f, 60)
+    for f in [440, 554, 659, 880]: add_tone(f, 60)
     add_tone(0, 100)
 
     return bytearray(frames), sample_rate
 
 
 # ---------------------------------------------------------------------------
-# 4. Bass Patterns: 808 Sub-bass kick pitch drops & LFSR snare noise
+# 4. Bass Patterns
 # ---------------------------------------------------------------------------
 def synth_bass_patterns():
     sample_rate = 10000
-    step_duration = 0.125 # 125 ms per step (120 BPM 16th notes)
+    step_duration = 0.125
     samples_per_step = int(sample_rate * step_duration)
-    total_steps = 32 # 2 bars
+    total_steps = 32
     total_samples = samples_per_step * total_steps
     samples = bytearray(total_samples)
 
@@ -275,7 +248,7 @@ def synth_bass_patterns():
     for step in range(total_steps):
         s_idx = step % 16
         if kicks[s_idx]:
-            phase_inc = 750 # kick start freq
+            phase_inc = 750
             amp = 255
 
         if snares[s_idx]:
@@ -285,18 +258,13 @@ def synth_bass_patterns():
             bass_sample = 0
             if amp > 0:
                 phase = (phase + phase_inc) & 0xFFFF
-                if phase_inc > 45: # kick end freq
-                    phase_inc -= 3 # pitch decay
-                if (sample_idx % 8) == 0 and amp > 0:
-                    amp -= 1
-                # Square wave
-                if phase & 0x8000:
-                    bass_sample = amp
+                if phase_inc > 45: phase_inc -= 3
+                if (sample_idx % 8) == 0 and amp > 0: amp -= 1
+                if phase & 0x8000: bass_sample = amp
 
             noise_sample = 0
             if noise_amp > 0:
-                if (sample_idx % 4) == 0 and noise_amp > 0:
-                    noise_amp -= 1
+                if (sample_idx % 4) == 0 and noise_amp > 0: noise_amp -= 1
                 lsb = lfsr & 1
                 lfsr >>= 1
                 if lsb:
@@ -310,37 +278,18 @@ def synth_bass_patterns():
     return samples, sample_rate
 
 
-def main():
-    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
-    synths = [
-        ("drone_synth", synth_drone),
-        ("peepsy_acid", synth_acid),
-        ("flappy_slider", synth_flappy),
-        ("bass_patterns", synth_bass_patterns),
-    ]
-
-    for name, fn in synths:
-        samples, rate = fn()
-        out = AUDIO_DIR / f"{name}.mp3"
-        write_wav_to_mp3(samples, rate, out)
-
-
-if __name__ == "__main__":
-    main()
-
 # ---------------------------------------------------------------------------
-# 5. Minimal Techno: Rolling 16th-note sub bassline with resonant filter & 4x4 kick
+# 5. Minimal Techno
 # ---------------------------------------------------------------------------
 def synth_minimal_techno():
     sample_rate = 15600
     P_C2 = 137; P_Eb2 = 163; P_F2 = 183; P_C3 = 274
-    # Pattern 1: Rolling Bass
     pitches = [P_C2, P_Eb2, P_C2, P_C2, P_Eb2, P_C2, P_C2, P_Eb2, P_C2, P_F2, P_C2, P_C2, P_Eb2, P_C2, P_C2, P_F2]
-    drums   = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2] # Kick (1) and offbeat hat (2)
+    drums   = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
 
-    step_duration = 0.120 # ~125 BPM
+    step_duration = 0.120
     samples_per_step = int(sample_rate * step_duration)
-    total_steps = 32 # 2 bars
+    total_steps = 32
     total_samples = samples_per_step * total_steps
     samples = bytearray(total_samples)
 
@@ -415,12 +364,11 @@ def synth_minimal_techno():
 
 
 # ---------------------------------------------------------------------------
-# 6. Deep Minimal: Plucky off-beat sub bass & stripped-down micro percussion
+# 6. Deep Minimal
 # ---------------------------------------------------------------------------
 def synth_deep_minimal():
     sample_rate = 15600
     P_C2 = 137; P_Eb2 = 163
-    # Off-beat plucks
     pitches = [0, 0, P_C2, 0, 0, 0, P_C2, 0, 0, 0, P_Eb2, 0, 0, 0, P_C2, 0]
     drums   = [1, 0, 2,    0, 1, 0, 2,    0, 1, 0, 2,     0, 1, 0, 2,    0]
 
@@ -501,6 +449,25 @@ def synth_deep_minimal():
 
     return samples, sample_rate
 
+
+# ---------------------------------------------------------------------------
+# 7. Quantum DJ: Granular 1-bit / bytebeat alien stream
+# ---------------------------------------------------------------------------
+def synth_quantum_matrix():
+    sample_rate = 16000
+    duration_sec = 5.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+    t = 0
+    for i in range(total_samples):
+        lfo = int(math.sin(i * 0.002) * 5) + 6
+        val = ((t * lfo & (t >> 7)) | (t * 3 & (t >> 9))) & 0xFF
+        out = 220 if (val > 115) else 40
+        samples[i] = out
+        t += 1
+    return samples, sample_rate
+
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -510,6 +477,7 @@ def main():
         ("bass_patterns", synth_bass_patterns),
         ("minimal_techno", synth_minimal_techno),
         ("deep_minimal", synth_deep_minimal),
+        ("quantum_matrix", synth_quantum_matrix),
     ]
 
     for name, fn in synths:

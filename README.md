@@ -13,6 +13,7 @@ using the AudioBoot bootloader.
 | `bass_patterns.cpp` | Punchy 808 sub-bass, kicks, snares & rhythm generator | - |
 | `minimal_techno.cpp` | Hypnotic rolling basslines & tight minimal techno groove | - |
 | `deep_minimal.cpp` | Sub-heavy plucks & stripped-down micro-grooves | - |
+| `quantum_matrix_new.cpp` | Quantum DJ: Granular 1-bit bytebeat with chaotic NeoPixel sparks | - |
 
 ## Web Audio Player & Flasher
 

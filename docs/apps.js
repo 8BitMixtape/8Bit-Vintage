@@ -11,9 +11,7 @@ window.APPS = [
       "dual-osc",
       "plasma"
     ],
-    "manual": "DRONE_SYNTH_MANUAL.md",
-    "flash_bytes": 6760,
-    "wav_bytes": 1451900
+    "manual": "DRONE_SYNTH_MANUAL.md"
   },
   {
     "id": "peepsy_acid",
@@ -26,9 +24,7 @@ window.APPS = [
       "tb-303",
       "drums",
       "sequencer"
-    ],
-    "flash_bytes": 4064,
-    "wav_bytes": 894476
+    ]
   },
   {
     "id": "flappy_slider",
@@ -41,9 +37,7 @@ window.APPS = [
       "chiptune",
       "interactive",
       "flappy"
-    ],
-    "flash_bytes": 4708,
-    "wav_bytes": 1027196
+    ]
   },
   {
     "id": "bass_patterns",
@@ -56,9 +50,7 @@ window.APPS = [
       "808",
       "drum-machine",
       "rhythm"
-    ],
-    "flash_bytes": 5280,
-    "wav_bytes": 1146644
+    ]
   },
   {
     "id": "minimal_techno",
@@ -71,9 +63,7 @@ window.APPS = [
       "techno",
       "rolling-bass",
       "groove"
-    ],
-    "flash_bytes": 4254,
-    "wav_bytes": 934292
+    ]
   },
   {
     "id": "deep_minimal",
@@ -86,8 +76,21 @@ window.APPS = [
       "deep",
       "sub-bass",
       "micro-house"
+    ]
+  },
+  {
+    "id": "quantum_matrix",
+    "source": "quantum_matrix_new.cpp",
+    "title": "Quantum DJ",
+    "tagline": "Granular 1-bit quantum noise with chaotic NeoPixel sparks",
+    "description": "Bytebeat granular streamer that turns internal ADC noise and sine modulation into alien chiptune rhythms. Slider controls slowdown, pot selects glitch modes. Buttons cycle 5 color palettes.",
+    "tags": [
+      "quantum",
+      "bytebeat",
+      "granular",
+      "glitch"
     ],
-    "flash_bytes": 3968,
-    "wav_bytes": 867932
+    "flash_bytes": 4756,
+    "wav_bytes": 1040468
   }
 ];

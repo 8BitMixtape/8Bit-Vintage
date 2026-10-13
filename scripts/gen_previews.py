@@ -326,6 +326,41 @@ def main():
                        duration=ms, loop=0, optimize=True)
         print(f"==> {out.relative_to(ROOT)} ({len(frames)} frames, {out.stat().st_size // 1024} KB)")
 
+# ---------------------------------------------------------------------------
+# 7. quantum_matrix_new.cpp — Chaotic Pink/Blue quantum granular visualizer
+# ---------------------------------------------------------------------------
+def quantum_matrix_frames():
+    import random
+    random.seed(42)
+    frames = []
+    matrix = [[(0, 0, 0) for _ in range(MATRIX_W)] for _ in range(MATRIX_H)]
+
+    for f in range(40):
+        intensity = int(120 + math.sin(f * 0.35) * 100)
+        peak = (intensity - 220) * 2 if intensity > 220 else 0
+        potBase = 180
+
+        num_updates = 2 + (intensity >> 5)
+        for _ in range(num_updates):
+            px = random.randint(0, MATRIX_W - 1)
+            py = random.randint(0, MATRIX_H - 1)
+            r = min(255, intensity)
+            g = min(255, peak)
+            b = min(255, potBase)
+            matrix[py][px] = (r, g, b)
+
+        for _ in range(3):
+            if random.random() < 0.4:
+                px = random.randint(0, MATRIX_W - 1)
+                py = random.randint(0, MATRIX_H - 1)
+                matrix[py][px] = (0, 0, 0)
+
+        frame_rows = [list(row) for row in matrix]
+        frames.append(render_frame(frame_rows))
+
+    return frames, 60
+
+RENDERERS["quantum_matrix"] = quantum_matrix_frames
 
 if __name__ == "__main__":
     main()
