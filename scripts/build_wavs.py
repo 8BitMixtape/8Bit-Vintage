@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""
+Build every sound app listed in docs/apps.json and publish its AudioBoot WAV
+to docs/wav/<id>.wav for the GitHub Pages player.
+
+The sketch is selected per build via PLATFORMIO_BUILD_SRC_FILTER, so
+platformio.ini is never modified. Only compiles — never uploads.
+
+Usage:
+  python3 scripts/build_wavs.py            # build all apps
+  python3 scripts/build_wavs.py drone_synth  # build selected ids
+"""
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+APPS_JSON = ROOT / "docs" / "apps.json"
+WAV_OUT = ROOT / "docs" / "wav"
+ENV = "attiny85"
+BUILD_WAV = ROOT / ".pio" / "build" / ENV / "firmware.wav"
+BUILD_HEX = ROOT / ".pio" / "build" / ENV / "firmware.hex"
+
+
+def hex_bytes(path: Path) -> int:
+    total = 0
+    for line in path.read_text().splitlines():
+        if line.startswith(":") and line[7:9] == "00":
+            total += int(line[1:3], 16)
+    return total
+
+
+def main() -> int:
+    apps = json.loads(APPS_JSON.read_text())
+    wanted = set(sys.argv[1:])
+    WAV_OUT.mkdir(parents=True, exist_ok=True)
+    failed = []
+
+    for app in apps:
+        if wanted and app["id"] not in wanted:
+            continue
+        print(f"==> {app['id']} ({app['source']})")
+        env = dict(os.environ, PLATFORMIO_BUILD_SRC_FILTER=f"-<*> +<{app['source']}>")
+        BUILD_WAV.unlink(missing_ok=True)
+        res = subprocess.run(["pio", "run", "-e", ENV], cwd=ROOT, env=env)
+        if res.returncode != 0 or not BUILD_WAV.exists():
+            print(f"!! build failed for {app['id']}")
+            failed.append(app["id"])
+            continue
+        dest = WAV_OUT / f"{app['id']}.wav"
+        shutil.copyfile(BUILD_WAV, dest)
+        # Record size info for the web page
+        app["flash_bytes"] = hex_bytes(BUILD_HEX)
+        app["wav_bytes"] = dest.stat().st_size
+        print(f"    -> {dest.relative_to(ROOT)} ({app['flash_bytes']} B flash)")
+
+    APPS_JSON.write_text(json.dumps(apps, indent=2, ensure_ascii=False) + "\n")
+    if failed:
+        print("Failed:", ", ".join(failed))
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

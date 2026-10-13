@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>8Bit-Vintage — Sound App WAV Library</title>
+  <meta name="description" content="AudioBoot WAV files for 8Bit Mixtape ATtiny85 sound apps. Play a WAV into your Mixtape to flash it." />
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card: #151922;
+      --text: #e6e6e6;
+      --muted: #9aa4b2;
+      --border: #2a2f3a;
+      --link: #7aa2ff;
+      --link-hover: #a5bfff;
+      --shadow: 0 4px 16px rgba(0,0,0,0.35);
+    }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif; margin: 2rem; color: var(--text); background: var(--bg); }
+    h1 { margin-bottom: 0.25rem; }
+    p.lead { margin-top: 0; color: var(--muted); }
+    .howto { font-size: 0.9rem; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 1rem 0.75rem 2.25rem; margin: 1rem 0 1.5rem; }
+    .howto li { margin: 0.2rem 0; }
+    .howto strong { color: var(--text); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .card { border: 1px solid var(--border); border-radius: 12px; padding: 1rem; background: var(--card); box-shadow: var(--shadow); }
+    .title { font-weight: 600; margin: 0 0 0.25rem; color: var(--text); }
+    .tagline { font-size: 0.85rem; color: var(--muted); margin: 0; }
+    .desc-box { font-size: 0.85rem; color: #aeb9cc; margin-top: 0.5rem; line-height: 1.35; padding: 6px; background: rgba(0,0,0,0.15); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); min-height: 2.7rem; }
+    .stats { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; font-family: ui-monospace, monospace; }
+    .links { font-size: 0.9rem; margin-top: 0.5rem; color: var(--muted); }
+    .links a { color: var(--link); margin-right: 0.75rem; }
+    audio { width: 100%; margin-top: 0.5rem; filter: saturate(0.9) brightness(0.95); }
+    .footer { margin-top: 2rem; font-size: 0.9rem; color: var(--muted); }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; color: var(--link-hover); }
+    .btn-hip { display:inline-block; margin-right: .5rem; margin-top:.5rem; padding:.5rem .75rem; border-radius:8px; border:1px solid var(--border); background: linear-gradient(135deg,#2a2f3a,#1b1f29); color: var(--text); cursor:pointer; box-shadow: var(--shadow); font-size: 0.9rem;}
+    .btn-hip:hover { filter: brightness(1.05); }
+    .hip-toast { position: fixed; left: 1rem; bottom: 1rem; background: #121620; border:1px solid var(--border); padding:.75rem 1rem; border-radius:10px; box-shadow: var(--shadow); color: var(--text); display:none; align-items:center; gap:.75rem; z-index: 100;}
+    .hip-dot { width:10px; height:10px; border-radius:50%; background:#61d673; box-shadow:0 0 12px #61d673; display:inline-block; }
+    .btn-stop { padding:.35rem .6rem; border-radius:8px; border:1px solid var(--border); background:#2a2f3a; color:var(--text); cursor:pointer; }
+  </style>
+</head>
+<body>
+  <h1>8Bit-Vintage — Sound Apps</h1>
+  <p class="lead">Inline players for all AudioBoot WAV files. Play one into your 8Bit Mixtape to flash it.</p>
+
+  <ol class="howto">
+    <li><strong>Connect</strong> your computer/phone headphone out to the Mixtape audio in.</li>
+    <li><strong>Volume to MAX</strong> and disable sound effects / equalizers.</li>
+    <li><strong>Power-cycle</strong> the Mixtape to enter the bootloader.</li>
+    <li>Hit <strong>Upload</strong> on an app and let it play to the end.</li>
+  </ol>
+
+  <div class="grid" id="grid">
+    <p class="lead">Loading…</p>
+  </div>
+
+  <div class="footer">
+    Source: <a href="https://github.com/8BitMixtape/8Bit-Vintage">8BitMixtape/8Bit-Vintage</a> ·
+    Bootloader: <a href="https://github.com/ChrisMicro/TinyAudioBoot">TinyAudioBoot</a> ·
+    Converter: <a href="https://github.com/ATtinyTeenageRiot/hex2wav">hex2wav</a>
+  </div>
+
+  <div id="hipToast" class="hip-toast">
+    <span class="hip-dot"></span>
+    <span id="hipMsg">Uploading… Set your volume to max.</span>
+    <button class="btn-stop" id="hipStop">Stop</button>
+  </div>
+
+  <script>
+    const REPO = 'https://github.com/8BitMixtape/8Bit-Vintage';
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function renderCard(app) {
+      const wav = `wav/${app.id}.wav`;
+      const stats = [];
+      if (app.flash_bytes) stats.push(`${app.flash_bytes} B / 8 KB flash`);
+      if (app.wav_bytes) stats.push(`${(app.wav_bytes / 1024).toFixed(0)} KB wav`);
+      const manual = app.manual
+        ? `<a href="${REPO}/blob/main/docs/${esc(app.manual)}" target="_blank" rel="noopener">Manual</a>` : '';
+      return `
+        <div class="card" id="card-${esc(app.id)}">
+          <div class="title">${esc(app.title)}</div>
+          <p class="tagline">${esc(app.tagline)}</p>
+          <div class="desc-box">${esc(app.description)}</div>
+          <audio controls preload="none" id="audio-${esc(app.id)}">
+            <source src="${wav}" type="audio/wav" />
+          </audio>
+          <div class="stats">${stats.join(' · ')}</div>
+          <div class="links">
+            <a href="${wav}" download="${esc(app.id)}.wav">Download WAV</a>
+            ${manual}
+          </div>
+        </div>`;
+    }
+
+    // Upload = play from the very start at full volume, normal speed
+    function uploadFromCard(card) {
+      const audio = card.querySelector('audio');
+      if (!audio) return;
+      stopAllAudio(false);
+      audio.currentTime = 0;
+      audio.playbackRate = 1.0;
+      audio.volume = 1.0;
+      audio.play()
+        .then(() => showHipToast('Uploading to 8Bit Mixtape… Set volume to MAX.'))
+        .catch(() => showHipToast('Could not auto-play. Click the play button on the audio control.'));
+    }
+    function showHipToast(msg) {
+      const t = document.getElementById('hipToast');
+      document.getElementById('hipMsg').textContent = msg;
+      t.style.display = 'flex';
+    }
+    function hideHipToast() {
+      document.getElementById('hipToast').style.display = 'none';
+    }
+    function stopAllAudio(hide = true) {
+      document.querySelectorAll('audio').forEach(a => { try { a.pause(); a.currentTime = 0; } catch (e) {} });
+      if (hide) hideHipToast();
+    }
+    document.getElementById('hipStop').addEventListener('click', () => stopAllAudio());
+
+    async function init() {
+      const grid = document.getElementById('grid');
+      try {
+        const apps = await (await fetch('apps.json', { cache: 'no-cache' })).json();
+        grid.innerHTML = apps.map(renderCard).join('');
+      } catch (e) {
+        grid.innerHTML = '<p class="lead">Could not load apps.json — open this page via GitHub Pages or a local web server.</p>';
+        return;
+      }
+      grid.querySelectorAll('.card').forEach(card => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-hip';
+        btn.innerText = 'Upload';
+        btn.addEventListener('click', () => uploadFromCard(card));
+        card.querySelector('.links').prepend(btn);
+        // Only one WAV at a time; hide the toast when playback ends
+        const audio = card.querySelector('audio');
+        audio.addEventListener('play', () => {
+          document.querySelectorAll('audio').forEach(a => { if (a !== audio) a.pause(); });
+        });
+        audio.addEventListener('ended', hideHipToast);
+      });
+    }
+    init();
+  </script>
+</body>
+</html>

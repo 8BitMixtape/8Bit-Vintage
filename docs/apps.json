@@ -1,0 +1,17 @@
+[
+  {
+    "id": "drone_synth",
+    "source": "drone_synth.cpp",
+    "title": "Drone Synth",
+    "tagline": "Dual-oscillator drone with generative plasma visuals",
+    "description": "Knob sets base pitch, slider detunes the second oscillator. Buttons cycle 4 unified audio/visual modes; hold a button for the visual shift layer.",
+    "tags": [
+      "drone",
+      "dual-osc",
+      "plasma"
+    ],
+    "manual": "DRONE_SYNTH_MANUAL.md",
+    "flash_bytes": 6760,
+    "wav_bytes": 1451900
+  }
+]
