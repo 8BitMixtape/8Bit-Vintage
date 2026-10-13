@@ -32,6 +32,8 @@
     .links a { color: var(--link); margin-right: 0.75rem; }
     audio { width: 100%; margin-top: 0.5rem; filter: saturate(0.9) brightness(0.95); }
     .footer { margin-top: 2rem; font-size: 0.9rem; color: var(--muted); }
+    img { background: #0b0e13; border: 1px solid var(--border); }
+    .preview img { width: 100%; border-radius: 6px; margin-top: 0.5rem; display: block; image-rendering: pixelated; }
     a { color: var(--link); text-decoration: none; }
     a:hover { text-decoration: underline; color: var(--link-hover); }
     .btn-hip { display:inline-block; margin-right: .5rem; margin-top:.5rem; padding:.5rem .75rem; border-radius:8px; border:1px solid var(--border); background: linear-gradient(135deg,#2a2f3a,#1b1f29); color: var(--text); cursor:pointer; box-shadow: var(--shadow); font-size: 0.9rem;}
@@ -87,6 +89,10 @@
         <div class="card" id="card-${esc(app.id)}">
           <div class="title">${esc(app.title)}</div>
           <p class="tagline">${esc(app.tagline)}</p>
+          <a class="preview" href="gifs/${esc(app.id)}.gif" target="_blank">
+            <img src="gifs/${esc(app.id)}.gif" alt="${esc(app.title)} LED preview" loading="lazy"
+                 onerror="this.parentElement.style.display='none'" />
+          </a>
           <div class="desc-box">${esc(app.description)}</div>
           <audio controls preload="none" id="audio-${esc(app.id)}">
             <source src="${wav}" type="audio/wav" />
