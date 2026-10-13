@@ -755,8 +755,396 @@ def kraftwerk_roboter_frames():
 
 RENDERERS["kraftwerk_roboter"] = kraftwerk_roboter_frames
 
+
+# ---------------------------------------------------------------------------
+# 15. atari_punk_console.cpp — Stepped Tone Staircase & CRT Scope
+# ---------------------------------------------------------------------------
+def atari_punk_console_frames():
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Stepped Tone Harmonic Staircase (Divisors 1 to 5)
+            step = (f // 5) % 5
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    level = 3 - y # 0 bottom, 3 top
+                    if x <= step and level <= x:
+                        col = (255, 30, 0) if x == 0 else (
+                              (255, 120, 0) if x == 1 else (
+                              (255, 220, 0) if x == 2 else (
+                              (0, 255, 80) if x == 3 else (0, 180, 255))))
+                        row.append(col)
+                    else:
+                        row.append((10, 10, 15))
+                rows.append(row)
+        else:
+            # Mode 1: Phosphor Amber CRT Oscilloscope
+            beam_x = (f - 24) % MATRIX_W
+            pulse_h = int(1.5 + math.sin((f - 24) * 0.4) * 1.5)
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if x == beam_x:
+                        row.append((255, 235, 120)) # Electron beam
+                    elif y >= (3 - pulse_h):
+                        row.append((170, 65, 0))    # Phosphor glow
+                    else:
+                        row.append((12, 6, 0))
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["atari_punk_console"] = atari_punk_console_frames
+
+
+# ---------------------------------------------------------------------------
+# 16. benjolin_noise.cpp — The Rungler Shift Register & Cellular Automaton
+# ---------------------------------------------------------------------------
+def benjolin_noise_frames():
+    frames = []
+    total_frames = 48
+    sr = 0xAC
+    ca = [0, 0, 1, 0, 0]
+    ca_history = [[0]*5 for _ in range(4)]
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: The Rungler Shift Register & 3-bit DAC
+            data_bit = 1 if ((f * 7) & 8) else 0
+            sr = ((sr << 1) | data_bit) & 0xFF
+            dac = ((sr & 1) << 2) | (sr & 2) | ((sr & 4) >> 2)
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if y < 2:
+                        # Top 2 rows: 8 bits of shift register
+                        idx = y * 4 + (x if x < 4 else 3)
+                        bit = (sr >> (7 - (idx % 8))) & 1
+                        row.append((0, 255, 200) if bit else (5, 20, 15))
+                    else:
+                        # Bottom 2 rows: 3-bit DAC stepped bar
+                        bar_pos = x + (0 if y == 2 else 5)
+                        row.append((255, 120, 0) if bar_pos <= (dac + 1) else (15, 8, 0))
+                rows.append(row)
+        else:
+            # Mode 1: Rule 30 Cellular Automaton
+            next_row = []
+            for x in range(5):
+                l = ca[x - 1] if x > 0 else ca[4]
+                m = ca[x]
+                r = ca[x + 1] if x < 4 else ca[0]
+                next_row.append(l ^ (m | r))
+            ca = next_row
+            ca_history.pop()
+            ca_history.insert(0, next_row)
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    is_on = ca_history[y][x]
+                    row.append((255, 0, 110) if is_on else (12, 0, 22))
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["benjolin_noise"] = benjolin_noise_frames
+
+
+# ---------------------------------------------------------------------------
+# 17. dub_siren_echo.cpp — Sound-System VU Meter & Rastafari Waves
+# ---------------------------------------------------------------------------
+def dub_siren_echo_frames():
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Sound System Tri-Color VU Meter (Green, Gold, Red)
+            bars = [
+                min(4, max(1, int(2.5 + math.sin(f * 0.6 + x * 1.1) * 1.8)))
+                for x in range(MATRIX_W)
+            ]
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    level = 3 - y # 0 bottom, 3 top
+                    if level < bars[x]:
+                        col = (255, 0, 0) if level == 3 else (
+                              (255, 200, 0) if level == 2 else (0, 255, 40))
+                        row.append(col)
+                    else:
+                        row.append((5, 12, 5))
+                rows.append(row)
+        else:
+            # Mode 1: Rastafari Waves (Red, Gold, Green flowing bands)
+            for y in range(MATRIX_H):
+                rasta = (255, 10, 10) if y == 0 else (
+                        (255, 210, 0) if y == 1 else (0, 230, 30))
+                row = []
+                for x in range(MATRIX_W):
+                    wave = (x + (f // 2)) & 3
+                    row.append((255, 255, 255) if wave == 0 else rasta)
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["dub_siren_echo"] = dub_siren_echo_frames
+
+
+# ---------------------------------------------------------------------------
+# 18. industrial_cyberdrone.cpp — Nuclear Trefoil & Geiger Particle Sparks
+# ---------------------------------------------------------------------------
+def industrial_cyberdrone_frames():
+    nuke_bmp = [
+        1, 0, 1, 0, 1,
+        0, 1, 1, 1, 0,
+        1, 1, 1, 1, 1,
+        0, 1, 0, 1, 0
+    ]
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Nuclear Trefoil (Pulsing yellow/gold radiation alert)
+            pulse = int(190 + math.sin(f * 0.5) * 60)
+            nuke_yellow = (pulse, int(pulse * 0.85), 0)
+            dark_core = (15, 8, 0)
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    idx = y * MATRIX_W + x
+                    is_nuke = nuke_bmp[idx]
+                    row.append(nuke_yellow if is_nuke else dark_core)
+                rows.append(row)
+        else:
+            # Mode 1: Geiger Ionizing Particle Strikes
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    p = ((f * 37 + x * 41 + y * 67) ^ (f >> 2)) & 255
+                    if p > 220:
+                        row.append((255, 230, 110)) # White-hot ionization strike
+                    elif p > 165:
+                        row.append((0, 240, 50))    # Radiation green
+                    else:
+                        row.append((0, 15, 6))      # Dark background
+                rows.append(row)
+
+RENDERERS["industrial_cyberdrone"] = industrial_cyberdrone_frames
+
+
+# ---------------------------------------------------------------------------
+# 19. soma_lyra.cpp — 8-Voice Organismic Node Matrix & Hyper LFO Orbit
+# ---------------------------------------------------------------------------
+def soma_lyra_frames():
+    # 8 voice nodes on 5x4 matrix:
+    # Pair 1: (0,0), (1,0)  Pair 2: (3,0), (4,0)
+    # Pair 3: (0,3), (1,3)  Pair 4: (3,3), (4,3)
+    # Center: interconnect lines & Hyper LFO core
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: 8-Voice Organismic Nodes with FM cross-coupling pulses
+            pulse_a = int(180 + math.sin(f * 0.45) * 75)
+            pulse_b = int(180 + math.cos(f * 0.55) * 75)
+            amber = (255, 120 + pulse_a // 3, 20)
+            cyan = (20, pulse_b, 255)
+            core = (int(140 + math.sin(f * 0.9) * 90), 0, int(200 + math.cos(f * 0.9) * 55))
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    # Check if voice node
+                    is_p1 = (y == 0 and x in (0, 1))
+                    is_p2 = (y == 0 and x in (3, 4))
+                    is_p3 = (y == 3 and x in (0, 1))
+                    is_p4 = (y == 3 and x in (3, 4))
+
+                    if is_p1 or is_p3:
+                        row.append(amber)
+                    elif is_p2 or is_p4:
+                        row.append(cyan)
+                    elif x == 2 and (y in (1, 2)):
+                        # Central Hyper LFO nexus
+                        row.append(core)
+                    else:
+                        # Interconnection energy trail
+                        glow = int(25 + math.sin(f * 0.4 + (x + y)) * 20)
+                        row.append((glow, glow // 2, glow * 2))
+                rows.append(row)
+        else:
+            # Mode 1: Hyper LFO Cosmic Orbit (Lissajous curves)
+            center_x = 2.0 + math.sin(f * 0.35) * 1.5
+            center_y = 1.5 + math.cos(f * 0.5) * 1.2
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    dist = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+                    intensity = max(0.0, 1.0 - (dist / 2.2))
+                    r = int(intensity * 255)
+                    g = int(intensity * 60 + math.sin(f * 0.4) * 40)
+                    b = int(intensity * 230)
+                    row.append((r, max(0, g), b))
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["soma_lyra"] = soma_lyra_frames
+
+
+# ---------------------------------------------------------------------------
+# 20. bytebeat_explorer.cpp — Bit-Waterfall & CRT Scope
+# ---------------------------------------------------------------------------
+def bytebeat_explorer_frames():
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Bit Waterfall Matrix (cyan data lanes with orange center marker)
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    bit_on = (((f * 7 + x * 3 + y * 5) ^ (f >> 1)) & 3) == 0
+                    if x == 2:
+                        col = (255, 120, 0) if bit_on else (25, 8, 0)
+                    else:
+                        col = (0, 220, 255) if bit_on else (5, 12, 25)
+                    row.append(col)
+                rows.append(row)
+        else:
+            # Mode 1: Sierpinski Fractal Matrix
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    u = (x + (f >> 1)) & 15
+                    v = (y + (f >> 2)) & 15
+                    fractal = ((u & v) == 0)
+                    col = (190, 0, 255) if fractal else (10, 15, 35)
+                    row.append(col)
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["bytebeat_explorer"] = bytebeat_explorer_frames
+
+
+# ---------------------------------------------------------------------------
+# 21. bytebeat_techno.cpp — 808 Sub Kick Flare & Acid Digital Rain
+# ---------------------------------------------------------------------------
+def bytebeat_techno_frames():
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: 808 Kick Flare (Center column explodes with thermal orange flare)
+            kick_beat = (f % 6 == 0)
+            kick_flare = 255 if kick_beat else max(30, 255 - ((f % 6) * 45))
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if x == 2:
+                        row.append((kick_flare, kick_flare // 2, 0))
+                    else:
+                        hat = (((f * 5 + x * 7) ^ y) & 3) == 0
+                        row.append((0, 240, 255) if hat else (5, 10, 20))
+                rows.append(row)
+        else:
+            # Mode 1: Acid Digital Rain (Matrix Phosphor Green trails)
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    drop = ((f * 2) + x * 7 + y * 11) & 15
+                    if drop == 0:
+                        row.append((220, 255, 220)) # Leading raindrop head
+                    elif drop < 4:
+                        row.append((0, 240, 50))    # Phosphor green trail
+                    else:
+                        row.append((0, 15, 5))      # Dark background
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["bytebeat_techno"] = bytebeat_techno_frames
+
+
+# ---------------------------------------------------------------------------
+# 22. bytebeat_ambient.cpp — Aurora Borealis & Cosmic Starlight
+# ---------------------------------------------------------------------------
+def bytebeat_ambient_frames():
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Aurora Borealis (Breathing waves of Cyan, Emerald, Violet)
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    wave = int(128 + math.sin(f * 0.25 + x * 0.8 + y * 1.2) * 120)
+                    g = wave
+                    b = 255 - (wave // 2)
+                    r = int(math.sin(f * 0.15 + y) * 40 + 40)
+                    row.append((max(0, r), max(0, g), max(0, b)))
+                rows.append(row)
+        else:
+            # Mode 1: Cosmic Starlight & Diamond Nebula
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    star = ((f * 13) ^ (x * 47) ^ (y * 83)) & 15
+                    if star == 0:
+                        row.append((255, 255, 255)) # Sparkling white star
+                    elif star < 3:
+                        row.append((120, 190, 255)) # Cyan star
+                    elif star < 6:
+                        row.append((190, 70, 230))  # Violet nebula
+                    else:
+                        row.append((5, 5, 22))      # Deep space void
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["bytebeat_ambient"] = bytebeat_ambient_frames
+
+
 if __name__ == "__main__":
     main()
+
+
 
 
 

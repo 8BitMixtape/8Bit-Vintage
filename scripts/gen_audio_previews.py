@@ -1414,6 +1414,504 @@ def synth_kraftwerk_roboter():
 
     return samples, sample_rate
 
+
+# ---------------------------------------------------------------------------
+# 15. atari_punk_console.cpp — Atari Punk Console Deluxe
+# ---------------------------------------------------------------------------
+def synth_atari_punk_console():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    phase_astable = 0
+    mono_timer = 0
+    mono_state = 0
+    sub1_state = 0
+    sub2_state = 0
+    sub_count = 0
+
+    for i in range(total_samples):
+        t = i / float(sample_rate)
+        # Sweeping pitch from ~120 Hz to 1200 Hz with harmonic modulation
+        f_pitch = 140.0 + math.sin(t * 1.5) * 110.0 + (t / 6.0) * 350.0
+        inc_astable = int(f_pitch * (65536.0 / sample_rate))
+
+        # Sweeping monostable width to hit stepped tone jumps
+        mono_width = int(15 + (math.sin(t * 3.2) * 0.5 + 0.5) * 220)
+
+        prev_phase = phase_astable
+        phase_astable = (phase_astable + inc_astable) & 0xFFFF
+        astable_trig = (phase_astable < prev_phase)
+
+        if astable_trig:
+            sub_count += 1
+            sub1_state ^= 1
+            if (sub_count & 3) == 0:
+                sub2_state ^= 1
+            if mono_timer == 0:
+                mono_state = 1
+                mono_timer = mono_width
+
+        if mono_timer > 0:
+            mono_timer -= 1
+            if mono_timer == 0:
+                mono_state = 0
+
+        # Sound mode demonstration:
+        mono_pulse = 240 if mono_state else 15
+        astable_sq = 240 if (phase_astable < 32768) else 15
+
+        if t < 1.5:
+            out = mono_pulse
+        elif t < 3.5:
+            s1 = 230 if sub1_state else 25
+            s2 = 240 if sub2_state else 15
+            out = (mono_pulse + s1 + (s2 << 1)) >> 2
+        elif t < 5.0:
+            out = astable_sq ^ mono_pulse
+        else:
+            out = mono_pulse
+
+        samples[i] = min(255, max(0, out))
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 16. benjolin_noise.cpp — Benjolin / Rungler Chaotic Noise Synth
+# ---------------------------------------------------------------------------
+def synth_benjolin_noise():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    phase1 = 0
+    phase2 = 0
+    rungler_sr = 0xAC
+    flt_lp = 0.0
+    flt_bp = 0.0
+
+    def tri(p):
+        t = (p >> 8) & 0xFF
+        return (t << 1) if t < 128 else ((255 - t) << 1)
+
+    for i in range(total_samples):
+        t = i / float(sample_rate)
+
+        # Sweeping master VCO1 clock and VCO2
+        base_f1 = 80.0 + (math.sin(t * 1.8) * 0.5 + 0.5) * 450.0
+        base_f2 = 120.0 + (math.cos(t * 1.2) * 0.5 + 0.5) * 600.0
+
+        r_bits = ((rungler_sr & 0x01) << 2) | (rungler_sr & 0x02) | ((rungler_sr & 0x04) >> 2)
+        cv_mod = (r_bits - 3.5) * 35.0
+
+        f1 = max(15.0, base_f1 + cv_mod)
+        f2 = max(20.0, base_f2 + cv_mod * 0.6)
+
+        inc1 = int(f1 * (65536.0 / sample_rate))
+        inc2 = int(f2 * (65536.0 / sample_rate))
+
+        prev_p1 = phase1
+        phase1 = (phase1 + inc1) & 0xFFFF
+        vco1_clk = (phase1 < prev_p1)
+
+        phase2 = (phase2 + inc2) & 0xFFFF
+
+        if vco1_clk:
+            data_bit = 1 if (phase2 < 32768) else 0
+            rungler_sr = ((rungler_sr << 1) | data_bit) & 0xFF
+
+        t1 = tri(phase1)
+        t2 = tri(phase2)
+
+        # Sound modes over 6 seconds
+        if t < 2.5:
+            # Classic Benjolin Rungler
+            raw = ((t1 + t2) >> 1) ^ (0x20 if (rungler_sr & 0x80) else 0x00)
+        elif t < 4.5:
+            # Industrial wavefolded saturation
+            sq2 = 240 if phase2 < 32768 else 15
+            raw = (t1 ^ sq2) + (r_bits << 4)
+        else:
+            # Screaming filter band-pass
+            raw = t1 ^ t2
+
+        # Resonant filter
+        cutoff = 0.45 + (r_bits / 7.0) * 0.35
+        res = 0.28
+        res_in = raw - 128 - (flt_bp * res)
+        flt_lp += (res_in - flt_lp) * cutoff
+        flt_bp = res_in - flt_lp
+
+        out = int(flt_lp + 128) if t < 4.5 else int(flt_bp + 128)
+        samples[i] = min(255, max(0, out))
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 17. dub_siren_echo.cpp — Jamaican Dub Siren & Tape Echo
+# ---------------------------------------------------------------------------
+def synth_dub_siren_echo():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    phase_osc = 0
+    phase_lfo = 0
+    delay_buf = [128] * 256
+    echo_write_idx = 0
+    delay_decim = 0
+
+    for i in range(total_samples):
+        t = i / float(sample_rate)
+
+        # 4 Siren phases:
+        if t < 1.8:
+            # Laser sweep
+            lfo_rate = int(4.0 * (65536.0 / sample_rate))
+            phase_lfo = (phase_lfo + lfo_rate) & 0xFFFF
+            ramp = 255 - (phase_lfo >> 8)
+            f = 500.0 + ramp * 4.5
+        elif t < 3.4:
+            # UFO warble
+            lfo_rate = int(7.5 * (65536.0 / sample_rate))
+            phase_lfo = (phase_lfo + lfo_rate) & 0xFFFF
+            tri = (phase_lfo >> 8)
+            tri = (tri << 1) if tri < 128 else ((255 - tri) << 1)
+            f = 900.0 + (tri - 128) * 4.0
+        elif t < 4.8:
+            # Hi-Lo Klaxon
+            lfo_rate = int(3.2 * (65536.0 / sample_rate))
+            phase_lfo = (phase_lfo + lfo_rate) & 0xFFFF
+            f = 1100.0 if (phase_lfo < 32768) else 650.0
+        else:
+            # Airhorn blast + runaway
+            f = 2200.0 + (350.0 if (i & 512) else 0.0)
+
+        inc = int(f * (65536.0 / sample_rate))
+        phase_osc = (phase_osc + inc) & 0xFFFF
+        dry = 230 if (phase_osc < 32768) else 25
+
+        # Vintage tape echo (decimated to 1.25 kHz)
+        delay_decim = (delay_decim + 1) & 7
+        delay_len = 160
+        if delay_decim == 0:
+            read_idx = (echo_write_idx - delay_len) & 255
+            echo_samp = delay_buf[read_idx]
+
+            gain = 0.95 if t >= 4.8 else 0.65
+            fb_sig = echo_samp - 128
+            mixed = (dry - 128) + int(fb_sig * gain)
+            mixed = max(-110, min(110, mixed))
+
+            delay_buf[echo_write_idx] = mixed + 128
+            echo_write_idx = (echo_write_idx + 1) & 255
+
+        read_idx = (echo_write_idx - delay_len) & 255
+        wet = delay_buf[read_idx]
+        out = (dry + (wet << 1)) // 3
+        samples[i] = min(255, max(0, out))
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 18. industrial_cyberdrone.cpp — Industrial Cyber-Drone Synth
+# ---------------------------------------------------------------------------
+def synth_industrial_cyberdrone():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    phase1 = 0
+    phase2 = 0
+    phase3 = 0
+    phase4 = 0
+    flt_lp = 0.0
+    flt_bp = 0.0
+    lfsr = 0xB482
+
+    def tri(p):
+        t = (p >> 8) & 0xFF
+        return (t << 1) if t < 128 else ((255 - t) << 1)
+
+    for i in range(total_samples):
+        t = i / float(sample_rate)
+
+        # LFSR noise
+        if lfsr & 1: lfsr = (lfsr >> 1) ^ 0xB400
+        else: lfsr >>= 1
+        noise = lfsr & 0xFF
+
+        # Master cluster pitch
+        master_p = 120.0 + math.sin(t * 1.3) * 60.0 + (t / 6.0) * 180.0
+        depth = 60.0 + (math.sin(t * 2.1) * 0.5 + 0.5) * 140.0
+
+        o1 = tri(phase1)
+        o2 = tri(phase2)
+        o3 = tri(phase3)
+        o4 = tri(phase4)
+
+        # 4-node cross FM ring
+        m1 = (o4 - 128) * (depth / 128.0)
+        m2 = (o1 - 128) * (depth / 128.0)
+        m3 = (o2 - 128) * (depth / 128.0)
+        m4 = (o3 - 128) * (depth / 128.0)
+
+        # Geiger noise spikes between 3.2s and 4.8s
+        if 3.2 < t < 4.8 and noise > 220:
+            m1 += 140.0
+
+        f1 = max(10.0, master_p + m1)
+        f2 = max(10.0, master_p * 1.3 + m2)
+        f3 = max(10.0, master_p * 1.7 + m3)
+        f4 = max(10.0, master_p * 2.2 + m4)
+
+        phase1 = (phase1 + int(f1 * (65536.0 / sample_rate))) & 0xFFFF
+        phase2 = (phase2 + int(f2 * (65536.0 / sample_rate))) & 0xFFFF
+        phase3 = (phase3 + int(f3 * (65536.0 / sample_rate))) & 0xFFFF
+        phase4 = (phase4 + int(f4 * (65536.0 / sample_rate))) & 0xFFFF
+
+        sum_sig = (o1 + o2 + o3 + o4) // 4
+        if t > 4.8:
+            # Overdrive wavefold
+            sum_sig = sum_sig ^ (o2 >> 1)
+
+        # Diode wavefold & saturation
+        drive = 1.4 if t > 2.0 else 0.9
+        sat = int((sum_sig - 128) * drive)
+        sat = max(-115, min(115, sat))
+
+        # Resonant filter
+        cutoff = 0.55 + math.sin(t * 1.5) * 0.25
+        res = 0.32 if t > 4.5 else 0.18
+        res_in = sat - (flt_bp * res)
+        flt_lp += (res_in - flt_lp) * cutoff
+        flt_bp = res_in - flt_lp
+
+        out = int(flt_lp + 128) if t < 4.8 else int(flt_bp + 128)
+        samples[i] = min(255, max(0, out))
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 19. soma_lyra.cpp — SOMA Lyra-8 Organismic Synth
+# ---------------------------------------------------------------------------
+def synth_soma_lyra():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    phases = [0] * 8
+    lfo_a_phase = 0
+    lfo_b_phase = 0
+    delay_buf = [128] * 96
+    delay_idx = 0
+    delay_decim = 0
+
+    def tri_wave(p):
+        v = (p >> 8) & 0xFF
+        return (v << 1) if v < 128 else ((255 - v) << 1)
+
+    for i in range(total_samples):
+        t = i / float(sample_rate)
+
+        # Hyper LFO
+        lfo_a_phase = (lfo_a_phase + int(1.2 * (65536.0 / sample_rate))) & 0xFFFF
+        lfo_b_phase = (lfo_b_phase + int(0.7 * (65536.0 / sample_rate))) & 0xFFFF
+        lfo_a_val = tri_wave(lfo_a_phase)
+        lfo_b_val = (lfo_b_phase >> 8) & 0xFF
+
+        # Non-linear combination (SOMA Hyper LFO logic)
+        hyper_lfo = (lfo_a_val & lfo_b_val) ^ (lfo_b_val >> 1)
+        hyper_mod = (hyper_lfo - 128) * 0.4
+
+        # Pitch contour: gentle evolving cluster building into harmonic swells
+        base_f = 65.0 + math.sin(t * 0.8) * 20.0 + (t / 6.0) * 45.0
+        fm_depth = 40.0 + (math.sin(t * 1.5) * 0.5 + 0.5) * 75.0 + hyper_mod
+
+        # Calculate 8 voice outputs
+        v_outs = [tri_wave(p) for p in phases]
+
+        # Inter-voice FM modulation
+        # Pair 1: V1 modulated by V2, V2 modulated by V1
+        m1 = (v_outs[1] - 128) * (fm_depth / 128.0)
+        m2 = (v_outs[0] - 128) * (fm_depth / 180.0)
+        # Pair 2: V3 modulated by V4 + Pair 1 leak
+        m3 = (v_outs[3] - 128) * (fm_depth / 128.0) + (v_outs[0] - 128) * 0.2
+        m4 = (v_outs[2] - 128) * (fm_depth / 180.0)
+        # Pair 3: V5 modulated by V6 + Sub octaves
+        m5 = (v_outs[5] - 128) * (fm_depth / 128.0)
+        m6 = (v_outs[4] - 128) * (fm_depth / 160.0)
+        # Pair 4: V7 modulated by V8 + Hyper LFO
+        m7 = (v_outs[7] - 128) * (fm_depth / 128.0) + hyper_mod * 1.2
+        m8 = (v_outs[6] - 128) * (fm_depth / 150.0)
+
+        # Harmonies & intervals (Organismic cluster: Unison, 5th, Octave, 9th)
+        freqs = [
+            max(15.0, base_f * 1.00 + m1),
+            max(15.0, base_f * 1.01 + m2),
+            max(15.0, base_f * 1.498 + m3),
+            max(15.0, base_f * 1.505 + m4),
+            max(15.0, base_f * 2.00 + m5),
+            max(15.0, base_f * 2.015 + m6),
+            max(15.0, base_f * 2.99 + m7),
+            max(15.0, base_f * 3.02 + m8),
+        ]
+
+        for vi in range(8):
+            inc = int(freqs[vi] * (65536.0 / sample_rate))
+            phases[vi] = (phases[vi] + inc) & 0xFFFF
+
+        # Sum of 8 voices
+        dry_sum = sum(v_outs) // 8
+
+        # SOMA Lo-Fi BBD Dual Delay (decimated)
+        delay_decim = (delay_decim + 1) & 7
+        if delay_decim == 0:
+            delay_len = 72
+            read1 = (delay_idx - delay_len) % 96
+            read2 = (delay_idx - int(delay_len * 0.75)) % 96
+            delay_sig = (delay_buf[read1] + delay_buf[read2]) // 2
+
+            fb_gain = 0.85 if t > 3.5 else 0.60
+            mixed = (dry_sum - 128) + int((delay_sig - 128) * fb_gain)
+            # Diode saturation
+            sat = max(-115, min(115, int(mixed * 1.2)))
+            delay_buf[delay_idx] = sat + 128
+            delay_idx = (delay_idx + 1) % 96
+
+        read1 = (delay_idx - 72) % 96
+        wet = delay_buf[read1]
+
+        # Final mix with Drive saturation
+        drive = 1.3 if t > 2.5 else 1.0
+        final_sig = int((((dry_sum * 2 + wet) // 3) - 128) * drive)
+        out = max(0, min(255, final_sig + 128))
+        samples[i] = out
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 20. bytebeat_explorer.cpp — Bytebeat Explorer
+# ---------------------------------------------------------------------------
+def synth_bytebeat_explorer():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    t = 0
+    t_step = 256 # normal speed
+
+    for i in range(total_samples):
+        sec = i / float(sample_rate)
+        # Advance time
+        t += t_step
+        tt = (t >> 8) & 0xFFFFFFFF
+
+        if sec < 1.5:
+            # 0: The 42 Melody
+            out = (tt * ((tt >> 12) | (tt >> 8)) & 63 & (tt >> 4)) & 255
+        elif sec < 3.0:
+            # 1: Algorithmic Arp
+            out = ((tt * 5 & (tt >> 7)) | (tt * 3 & (tt >> 10))) & 255
+        elif sec < 4.5:
+            # 2: Chiptune Counter
+            out = (tt * ((tt >> 9) | (tt >> 13)) & 16) & 255
+        else:
+            # 3: Sierpinski Glitch
+            out = (((tt * (tt >> 8) * (tt >> 12) & 64) + (((tt >> 5) & (tt >> 7)) & (tt >> 3)))) & 255
+
+        # Boost range
+        out = ((out << 2) | (out >> 6)) & 255
+        samples[i] = out
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 21. bytebeat_techno.cpp — Bytebeat Techno & Acid
+# ---------------------------------------------------------------------------
+def synth_bytebeat_techno():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    t = 0
+    t_step = 270
+
+    for i in range(total_samples):
+        sec = i / float(sample_rate)
+        t += t_step
+        tt = (t >> 8) & 0xFFFFFFFF
+
+        if sec < 1.5:
+            # 0: Driving Cyber Techno
+            shift = (tt >> 16) & 31
+            out = (((tt >> 6) | tt | (tt >> shift)) * 10 + ((tt >> 11) & 7)) & 255
+        elif sec < 3.0:
+            # 1: Heavy Industrial Stomp
+            out = ((((tt >> 7 | tt | tt >> 6) * 10 + 4 * ((tt & (tt >> 13)) | (tt >> 6))))) & 255
+        elif sec < 4.5:
+            # 2: Modular Acid 303
+            out = (tt * (((tt >> 12 | tt >> 8) & (tt >> 4) & (tt >> 7)))) & 255
+        else:
+            # 3: Dystopian Beat
+            mod11 = (((tt >> 9) - 1) % 11) if (((tt >> 9) - 1) % 11) else 1
+            out = (((tt >> 5) | (tt << 4) | ((tt >> 10) ^ (mod11 * tt)))) & 255
+
+        samples[i] = out
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 22. bytebeat_ambient.cpp — Bytebeat Ambient & Fractals
+# ---------------------------------------------------------------------------
+def synth_bytebeat_ambient():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    t = 0
+    t_step = 180
+
+    for i in range(total_samples):
+        sec = i / float(sample_rate)
+        t += t_step
+        tt = (t >> 8) & 0xFFFFFFFF
+
+        if sec < 1.5:
+            # 0: Cosmic Choir
+            out = (((tt >> 6 | tt >> 7 | tt >> 8) * (tt >> 4 & tt >> 8))) & 255
+        elif sec < 3.0:
+            # 1: Starlight Arp
+            out = ((((tt * 9 & tt >> 4) | (tt * 5 & tt >> 7) | (tt * 3 & tt >> 10)) - 1)) & 255
+        elif sec < 4.5:
+            # 2: Alien Pulsar
+            out = ((((tt * ((tt >> 14 & tt >> 8) & 248) & 128) + ((tt >> 8 & tt >> 13) & (tt >> 3))))) & 255
+        else:
+            # 3: Fractal Void
+            out = ((((tt >> 7) * (tt >> 11) ^ ((tt >> 5) * (tt >> 9))))) & 255
+
+        # Soft ambient compression
+        out = ((out >> 1) + 64) & 255
+        samples[i] = out
+
+    return samples, sample_rate
+
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -1431,6 +1929,14 @@ def main():
         ("zelda_sid", synth_zelda_sid),
         ("kraftwerk_model", synth_kraftwerk_model),
         ("kraftwerk_roboter", synth_kraftwerk_roboter),
+        ("atari_punk_console", synth_atari_punk_console),
+        ("benjolin_noise", synth_benjolin_noise),
+        ("dub_siren_echo", synth_dub_siren_echo),
+        ("industrial_cyberdrone", synth_industrial_cyberdrone),
+        ("soma_lyra", synth_soma_lyra),
+        ("bytebeat_explorer", synth_bytebeat_explorer),
+        ("bytebeat_techno", synth_bytebeat_techno),
+        ("bytebeat_ambient", synth_bytebeat_ambient),
     ]
 
     for name, fn in synths:
@@ -1440,6 +1946,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 
 
 

@@ -21,6 +21,15 @@ using the AudioBoot bootloader.
 | `zelda_sid.cpp` | Legend of Zelda (Overworld Theme): 3-voice SID sound engine, dynamic PWM & fast arps | [Manual](docs/ZELDA_SID_MANUAL.md) |
 | `kraftwerk_model.cpp` | Kraftwerk ("Das Model"): Minimoog lead, Kling Klang arps, electro drums & Mensch-Maschine visuals | [Manual](docs/KRAFTWERK_MODEL_MANUAL.md) |
 | `kraftwerk_roboter.cpp` | Kraftwerk ("Die Roboter"): Vocoder lead, octave-jumping bass, mechanical drums & robot visuals | [Manual](docs/KRAFTWERK_ROBOTER_MANUAL.md) |
+| `atari_punk_console.cpp` | Atari Punk Console Deluxe: Forrest Mims Stepped Tone generator, dual sub-octaves & CRT scope | [Manual](docs/ATARI_PUNK_CONSOLE_MANUAL.md) |
+| `benjolin_noise.cpp` | Benjolin / Rungler: Rob Hordijk chaotic dual-oscillator shift register synth & Rule 30 visualizer | [Manual](docs/BENJOLIN_NOISE_MANUAL.md) |
+| `dub_siren_echo.cpp` | Jamaican Dub Siren & Tape Echo: King Tubby sound-system sirens, 256ms space delay & Rasta VU | [Manual](docs/DUB_SIREN_ECHO_MANUAL.md) |
+| `industrial_cyberdrone.cpp` | Industrial Cyber-Drone: SOMA Lyra-8 4-node FM chaos cluster, geiger glitch & nuclear trefoil | [Manual](docs/INDUSTRIAL_CYBERDRONE_MANUAL.md) |
+| `soma_lyra.cpp` | SOMA Lyra-8 Organismic Synth: 8 interconnected voices, Hyper LFO & Dual Delay | [Manual](docs/SOMA_LYRA_MANUAL.md) |
+| `bytebeat_explorer.cpp` | Bytebeat Explorer: Viznut classics, The 42 Melody, algorithmic arps & bit waterfall | [Manual](docs/BYTEBEAT_EXPLORER_MANUAL.md) |
+| `bytebeat_techno.cpp` | Bytebeat Techno & Acid: Algorithmic 4-on-the-floor, acid 303 basslines & industrial kick flare | [Manual](docs/BYTEBEAT_TECHNO_MANUAL.md) |
+| `bytebeat_ambient.cpp` | Bytebeat Ambient & Fractals: Cosmic choir, crystal arpeggios, time-dilation & Aurora Borealis | [Manual](docs/BYTEBEAT_AMBIENT_MANUAL.md) |
+
 
 ## Web Audio Player & Flasher
 

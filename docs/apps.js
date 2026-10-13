@@ -223,5 +223,175 @@ window.APPS = [
     "manual": "KRAFTWERK_ROBOTER_MANUAL.md",
     "flash_bytes": 5610,
     "wav_bytes": 1213004
+  },
+  {
+    "id": "atari_punk_console",
+    "source": "atari_punk_console.cpp",
+    "title": "Atari Punk Console Deluxe",
+    "tagline": "Forrest Mims Stepped Tone Generator, dual sub-octaves & CRT scope",
+    "description": "An authentic digital recreation and expansion of Forrest M. Mims III's legendary 1980 'Stepped Tone Generator' (Atari Punk Console). Features an astable square oscillator triggering a monostable pulse timer with retrigger lockout to produce iconic harmonic staircase jumps (octaves, fifths, sub-harmonics), plus dual sub-octave flip-flop frequency dividers (/2 and /4) for deep sub rumble. Left pot sweeps master pitch (30 Hz - 3.5 kHz), right pot tunes monostable pulse width. Left button cycles 4 sound modes (Pure APC, Sub Beast, Ring Mod, Bitcrush), right button cycles 4 reactive visualizers, hold both for laser pitch dive-bomb!",
+    "tags": [
+      "atari-punk-console",
+      "apc",
+      "stepped-tone",
+      "555-timer",
+      "sub-octave",
+      "noise",
+      "lo-fi",
+      "forrest-mims",
+      "chiptune"
+    ],
+    "manual": "ATARI_PUNK_CONSOLE_MANUAL.md",
+    "flash_bytes": 4026,
+    "wav_bytes": 881204
+  },
+  {
+    "id": "benjolin_noise",
+    "source": "benjolin_noise.cpp",
+    "title": "Benjolin / Rungler Noise Synth",
+    "tagline": "Rob Hordijk chaotic dual-oscillator shift register synth & Rule 30 visualizer",
+    "description": "An authentic digital tribute to Rob Hordijk's legendary 'Benjolin' chaotic modular synthesizer. Features two cross-modulating oscillators (VCO1 and VCO2) driving the 'Rungler' (an 8-bit digital shift register with 3-bit DAC stepped CV feedback), routed through a resonant state variable filter simulation. Swings between hypnotic melodic loop attractors, polyrhythmic alien chatter, and total chaotic noise meltdown. Left pot sets master clock / VCO1 pitch (2 Hz - 2.5 kHz), right pot tunes VCO2 and feedback depth. Left button cycles 4 synthesis modes, right button cycles 4 reactive visualizers, hold both for entropy meltdown!",
+    "tags": [
+      "benjolin",
+      "rungler",
+      "rob-hordijk",
+      "chaos",
+      "noise",
+      "modular",
+      "shift-register",
+      "cellular-automata",
+      "experimental"
+    ],
+    "manual": "BENJOLIN_NOISE_MANUAL.md",
+    "flash_bytes": 4662,
+    "wav_bytes": 1013924
+  },
+  {
+    "id": "dub_siren_echo",
+    "source": "dub_siren_echo.cpp",
+    "title": "Jamaican Dub Siren & Tape Echo",
+    "tagline": "King Tubby sound-system sirens, 256ms space delay & Rasta VU",
+    "description": "An authentic sound-system dub siren instrument with simulated vintage space tape echo, inspired by King Tubby, Lee 'Scratch' Perry, and Jah Shaka. Features 4 siren waveforms (Laser Sweep, UFO Warble, Hi-Lo Police Klaxon, Machine Gun Dub Bleep) paired with a decimated 256-byte circular tape delay buffer with non-linear magnetic tape saturation and infinite feedback runaway. Left pot sets siren pitch and LFO rate (0.5 - 18 Hz), right pot sweeps delay length (25 - 205 ms) and runaway feedback. Left button cycles 4 sirens, right button cycles 4 visualizers, hold both for reggae airhorn & echo blast!",
+    "tags": [
+      "dub-siren",
+      "dub",
+      "reggae",
+      "sound-system",
+      "tape-echo",
+      "delay",
+      "king-tubby",
+      "lee-scratch-perry",
+      "space-echo"
+    ],
+    "manual": "DUB_SIREN_ECHO_MANUAL.md",
+    "flash_bytes": 3984,
+    "wav_bytes": 881204
+  },
+  {
+    "id": "industrial_cyberdrone",
+    "source": "industrial_cyberdrone.cpp",
+    "title": "Industrial Cyber-Drone Synth",
+    "tagline": "SOMA Lyra-8 4-node FM chaos cluster, geiger glitch & nuclear trefoil",
+    "description": "An organismic harsh noise and ambient cyber-drone synthesizer inspired by the SOMA Lyra-8, Throbbing Gristle, and industrial soundscapes. Features 4 cross-modulating voice nodes linked in a non-linear feedback ring, granular LFSR geiger-counter noise injection, non-linear diode wavefolding distortion, and a screaming self-oscillating resonant state variable filter simulation. Sweeps from breathing ethereal sci-fi ambient chords to shrieking walls of harsh noise and seismic tectonic sub-rumble. Left pot sweeps FM cluster pitch (30 Hz - 1.6 kHz) and modulation depth, right pot drives wavefolding distortion and screaming filter resonance. Left button cycles 4 drone modes, right button cycles 4 visualizers, hold both for nuclear meltdown overload!",
+    "tags": [
+      "drone",
+      "noise",
+      "industrial",
+      "soma-lyra-8",
+      "fm-synthesis",
+      "chaos",
+      "ambient",
+      "geiger-counter",
+      "harsh-noise"
+    ],
+    "manual": "INDUSTRIAL_CYBERDRONE_MANUAL.md",
+    "flash_bytes": 4586,
+    "wav_bytes": 1000652
+  },
+  {
+    "id": "soma_lyra",
+    "source": "soma_lyra.cpp",
+    "title": "SOMA Lyra-8 Organismic Synth",
+    "tagline": "8-voice interconnected organismic drone, Hyper LFO & Dual Delay",
+    "description": "An authentic ATtiny85 recreation of Vlad Sadovsky's legendary SOMA Laboratory Lyra-8 organismic synthesizer. Features 8 cross-modulating voice oscillators organized into 4 pairs (V1-V2, V3-V4, V5-V6, V7-V8), interconnected FM feedback matrices, the iconic non-linear Hyper LFO (dual coupled LFOs with AND/OR logic wave-shaping), a simulated 96-byte lo-fi BBD double-delay line with self-oscillation, and non-linear diode Drive saturation. Sweeps from lush cosmic organs and celestial harmonics to thundering dark ambient drones and radioactive acoustic feedback storms. Left pot controls master pitch and FM feedback depth, right pot controls dual delay time, feedback, and drive. Left button cycles 4 voice modes, right button cycles 4 organismic visualizers, hold both for Hyper Resonance Meltdown!",
+    "tags": [
+      "soma-lyra",
+      "lyra-8",
+      "organismic",
+      "drone",
+      "ambient",
+      "noise",
+      "hyper-lfo",
+      "fm-synthesis",
+      "delay",
+      "experimental"
+    ],
+    "manual": "SOMA_LYRA_MANUAL.md",
+    "flash_bytes": 5112,
+    "wav_bytes": 1106828
+  },
+  {
+    "id": "bytebeat_explorer",
+    "source": "bytebeat_explorer.cpp",
+    "title": "Bytebeat Explorer",
+    "tagline": "Viznut classics, The 42 Melody, algorithmic arps & bit waterfall",
+    "description": "An interactive hardware explorer for the legendary algorithmic 'one-liner' bytebeat formulas discovered by Viznut (Ville-Matias Heikkilä), Tejeez, and the demoscene. Evaluates raw mathematical integer expressions in real-time to generate evolving chiptune melodies, arpeggios, and fractal polyrhythms. Features 4 iconic formulas: The 42 Melody, Algorithmic Arpeggiator, Chiptune Counter, and Sierpinski Glitch Machine. Left pot sweeps evaluation clock speed (2 kHz to 24 kHz), right pot dynamically shifts bitmasks and glitches equations. Left button cycles 4 formulas, right button cycles 4 reactive bit-matrix visualizers (Bit Waterfall, CRT Scope, Logic Flame, Sierpinski Fractal), hold both for Turbo Overclock Strobe!",
+    "tags": [
+      "bytebeat",
+      "one-liner",
+      "viznut",
+      "algorithmic",
+      "chiptune",
+      "glitch",
+      "math",
+      "demoscene",
+      "42-melody"
+    ],
+    "manual": "BYTEBEAT_EXPLORER_MANUAL.md",
+    "flash_bytes": 4006,
+    "wav_bytes": 881204
+  },
+  {
+    "id": "bytebeat_techno",
+    "source": "bytebeat_techno.cpp",
+    "title": "Bytebeat Techno & Acid",
+    "tagline": "Algorithmic 4-on-the-floor, acid 303 basslines & industrial kick flare",
+    "description": "A relentless algorithmic techno, acid, and industrial drum/bass machine powered by 4 pure mathematical bytebeat one-liners. Generates infinite four-on-the-floor sub kicks, off-beat hi-hats, squelching 303 acid lines, and cyberpunk drones entirely through integer arithmetic. Features 4 driving formulas: Cyber Techno, Heavy Industrial Stomp, Modular Acid 303, and Dystopian Beat. Left pot adjusts tempo (70 to 180 BPM), right pot drives bitwise overdrive and fold distortion. Left button cycles 4 techno formulas, right button cycles 4 rhythm visualizers (808 Sub Kick Flare, Industrial Strobe, Acid Rain, Cyber Radar), hold both for Stutter Roll Overdrive!",
+    "tags": [
+      "bytebeat",
+      "techno",
+      "acid",
+      "tb-303",
+      "industrial",
+      "drum-machine",
+      "algorithmic",
+      "one-liner",
+      "rave"
+    ],
+    "manual": "BYTEBEAT_TECHNO_MANUAL.md",
+    "flash_bytes": 4070,
+    "wav_bytes": 894476
+  },
+  {
+    "id": "bytebeat_ambient",
+    "source": "bytebeat_ambient.cpp",
+    "title": "Bytebeat Ambient & Fractals",
+    "tagline": "Cosmic choir, crystal arpeggios, time-dilation & Aurora Borealis",
+    "description": "A meditative, ethereal, and cosmic soundscape machine generating evolving ambient drones, celestial arpeggios, and fractal harmonic washes from 4 mathematical one-liners. Proves that binary math can generate profound acoustic serenity. Features 4 cosmic formulas: Cosmic Choir & Strings, Starlight Arpeggios & Crystals, Deep Space Alien Pulsar, and Fractal Mathematical Void. Left pot controls time dilation (stretching time from tectonic sub drones to sparkling chimes), right pot introduces harmonic shimmer and overtone diffusion. Left button cycles 4 equations, right button cycles 4 cosmic visualizers (Aurora Borealis, Starlight Plasma, Void Vortex, Celestial Constellation), hold both for Supernova Quantum Freeze!",
+    "tags": [
+      "bytebeat",
+      "ambient",
+      "drone",
+      "fractal",
+      "cosmic",
+      "space",
+      "ethereal",
+      "aurora",
+      "one-liner",
+      "generative"
+    ],
+    "manual": "BYTEBEAT_AMBIENT_MANUAL.md",
+    "flash_bytes": 3974,
+    "wav_bytes": 881204
   }
 ];
