@@ -88,8 +88,22 @@
       "bytebeat",
       "granular",
       "glitch"
+    ]
+  },
+  {
+    "id": "ave_maria_siberia",
+    "source": "ave_maria_siberia.cpp",
+    "title": "Ave Maria (Siberia)",
+    "tagline": "Haunting liturgical Ave Maria with deep bass drone & Soviet star",
+    "description": "Russian Orthodox liturgical interpretation of Schubert's Ave Maria. Deep D2 bass pedal drone, sacred choral arpeggios, and soaring melody. Left pot adjusts tempo & tone, right pot controls sub drone profundis. Buttons toggle Soviet Red Star, Kremlin Spire, and Siberian Blizzard visuals.",
+    "tags": [
+      "ave-maria",
+      "siberian",
+      "choral",
+      "liturgical",
+      "soviet-star"
     ],
-    "flash_bytes": 4756,
-    "wav_bytes": 1040468
+    "flash_bytes": 3876,
+    "wav_bytes": 854660
   }
 ]

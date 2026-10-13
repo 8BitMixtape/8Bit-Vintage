@@ -467,6 +467,82 @@ def synth_quantum_matrix():
         t += 1
     return samples, sample_rate
 
+# ---------------------------------------------------------------------------
+# 8. Ave Maria (Siberia): Deep Russian Orthodox D2 drone, sacred arpeggios & chant
+# ---------------------------------------------------------------------------
+def synth_ave_maria_siberia():
+    sample_rate = 10000
+    step_duration = 0.110 # 110 ms per arpeggio step
+    samples_per_step = int(sample_rate * step_duration)
+
+    arp_freqs = [147, 175, 220, 294, 349, 294, 220, 175, 110, 147, 175, 220, 294, 220, 175, 147]
+    # Melody: note frequency, duration in steps
+    melody = [
+        (220, 4), (220, 4), (294, 6), (294, 2), (294, 3), (277, 1), (233, 2), (220, 6),
+        (220, 2), (349, 4), (330, 3), (294, 1), (277, 2), (294, 4), (330, 4), (220, 6),
+        (220, 4), (220, 4), (349, 6), (349, 2), (349, 3), (330, 1), (294, 2), (277, 6),
+        (294, 2), (349, 3), (440, 3), (392, 2), (349, 2), (330, 2), (294, 6), (294, 6)
+    ]
+
+    total_steps = sum(d for _, d in melody) # 96 steps
+    total_samples = samples_per_step * total_steps
+    samples = bytearray(total_samples)
+
+    phase_bass = 0
+    phase_arp = 0
+    phase_lead = 0
+    inc_bass = int(73.4 * (65536.0 / sample_rate))
+
+    mel_idx = 0
+    mel_step_cnt = 0
+    cur_mel_freq, cur_mel_len = melody[0]
+    inc_lead = int(cur_mel_freq * (65536.0 / sample_rate))
+    env_lead = 250
+
+    sample_idx = 0
+    for step in range(total_steps):
+        # Arp
+        arp_f = arp_freqs[step % 16]
+        inc_arp = int(arp_f * (65536.0 / sample_rate))
+
+        # Check melody step advance
+        if mel_step_cnt >= cur_mel_len:
+            mel_idx = (mel_idx + 1) % len(melody)
+            cur_mel_freq, cur_mel_len = melody[mel_idx]
+            inc_lead = int(cur_mel_freq * (65536.0 / sample_rate))
+            env_lead = 250
+            mel_step_cnt = 0
+        mel_step_cnt += 1
+
+        for _ in range(samples_per_step):
+            # Voice 1: Deep bass drone (triangle)
+            phase_bass = (phase_bass + inc_bass) & 0xFFFF
+            tb = phase_bass >> 8
+            if tb > 127: tb = 255 - tb
+            s_bass = tb << 1
+
+            # Voice 2: Arp (triangle)
+            phase_arp = (phase_arp + inc_arp) & 0xFFFF
+            ta = phase_arp >> 8
+            if ta > 127: ta = 255 - ta
+            s_arp = (ta << 1) * 180 >> 8
+
+            # Voice 3: Sacred lead (triangle with slight vibrato)
+            vib = math.sin(sample_idx * 0.004) * 1.5
+            phase_lead = (phase_lead + inc_lead + int(vib * 10)) & 0xFFFF
+            tl = phase_lead >> 8
+            if tl > 127: tl = 255 - tl
+            s_lead = (tl << 1) * env_lead >> 8
+
+            # Mix
+            mix = (s_bass + s_arp + (s_lead << 1)) >> 2
+            samples[sample_idx] = min(255, max(0, mix))
+            sample_idx += 1
+
+            if env_lead > 40 and (sample_idx % 40) == 0:
+                env_lead -= 1
+
+    return samples, sample_rate
 
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
@@ -478,13 +554,13 @@ def main():
         ("minimal_techno", synth_minimal_techno),
         ("deep_minimal", synth_deep_minimal),
         ("quantum_matrix", synth_quantum_matrix),
+        ("ave_maria_siberia", synth_ave_maria_siberia),
     ]
 
     for name, fn in synths:
         samples, rate = fn()
         out = AUDIO_DIR / f"{name}.mp3"
         write_wav_to_mp3(samples, rate, out)
-
 
 if __name__ == "__main__":
     main()

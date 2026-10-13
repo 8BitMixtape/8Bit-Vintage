@@ -14,6 +14,7 @@ using the AudioBoot bootloader.
 | `minimal_techno.cpp` | Hypnotic rolling basslines & tight minimal techno groove | - |
 | `deep_minimal.cpp` | Sub-heavy plucks & stripped-down micro-grooves | - |
 | `quantum_matrix_new.cpp` | Quantum DJ: Granular 1-bit bytebeat with chaotic NeoPixel sparks | - |
+| `ave_maria_siberia.cpp` | Ave Maria (Siberia): Liturgical chant, deep pedal drone & Soviet Star | - |
 
 ## Web Audio Player & Flasher
 

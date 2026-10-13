@@ -362,5 +362,50 @@ def quantum_matrix_frames():
 
 RENDERERS["quantum_matrix"] = quantum_matrix_frames
 
+# ---------------------------------------------------------------------------
+# 8. ave_maria_siberia.cpp — Soviet Red Star & Siberian Liturgical visualizer
+# ---------------------------------------------------------------------------
+def ave_maria_siberia_frames():
+    soviet_star = [
+        0, 0, 1, 0, 0,
+        0, 1, 1, 1, 0,
+        1, 1, 1, 1, 1,
+        0, 1, 0, 1, 0
+    ]
+    frames = []
+    total_frames = 36
+
+    for f in range(total_frames):
+        # Pulsing gold intensity
+        pulse = int(190 + math.sin(f * 0.4) * 60)
+        gold = (pulse, int(pulse * 0.75), 0)
+        ruby_red = (45, 0, 0)
+        beacon_y = 3 - (f % 4)
+
+        rows = []
+        for y in range(MATRIX_H):
+            row = []
+            for x in range(MATRIX_W):
+                idx = y * MATRIX_W + x
+                is_star = soviet_star[idx]
+                if f < 24:
+                    # Soviet Red Star pulsing
+                    row.append(gold if is_star else ruby_red)
+                else:
+                    # Kremlin Beacon / Spire ascension
+                    if x == 2:
+                        row.append((240, 240, 255) if y == beacon_y else (200, 0, 0))
+                    elif is_star and y >= 2:
+                        row.append((180, 130, 0))
+                    else:
+                        row.append((25, 0, 0))
+            rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 65
+
+RENDERERS["ave_maria_siberia"] = ave_maria_siberia_frames
+
 if __name__ == "__main__":
     main()
