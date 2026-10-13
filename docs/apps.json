@@ -105,5 +105,80 @@
     ],
     "flash_bytes": 3872,
     "wav_bytes": 854660
+  },
+  {
+    "id": "lambada",
+    "source": "lambada.cpp",
+    "title": "Lambada",
+    "tagline": "Kaoma's tropical summer anthem with accordion & Carimbó groove",
+    "description": "Full 16-bar arrangement of Lambada ('Chorando se foi') in D minor. Left pot sets tempo (70-160 BPM), right pot controls bass punch & lead brilliance. Left button cycles 4 voices (Accordion, Marimba, 8-Bit, Saw), right button cycles 4 visualizers, hold both for Turbo Stutter Roll!",
+    "tags": [
+      "lambada",
+      "tropical",
+      "accordion",
+      "zouk",
+      "carimbo",
+      "latin"
+    ],
+    "manual": "LAMBADA_MANUAL.md",
+    "flash_bytes": 6300,
+    "wav_bytes": 1358996
+  },
+  {
+    "id": "axel_foley",
+    "source": "axel_foley.cpp",
+    "title": "Axel Foley",
+    "tagline": "Harold Faltermeyer's 1984 synth classic, Moog bass & LinnDrum",
+    "description": "Full arrangement of Beverly Hills Cop theme 'Axel F' in F minor. Left pot adjusts tempo (90-150 BPM), right pot controls 80s filter cutoff & Moog punch. Left button cycles 4 voices (Jupiter-8 Brass, DX7 Bell, C64 SID, Moog Saw), right button cycles retro visualizers (Police Siren, Outrun Grid, Boombox EQ, Neon Chase), hold both for machine-gun stutter roll!",
+    "tags": [
+      "axel-f",
+      "80s",
+      "synthwave",
+      "chiptune",
+      "beverly-hills-cop",
+      "moog"
+    ],
+    "manual": "AXEL_FOLEY_MANUAL.md",
+    "flash_bytes": 5920,
+    "wav_bytes": 1279364
+  },
+  {
+    "id": "auf_der_heide",
+    "source": "auf_der_heide.cpp",
+    "title": "Auf der Heide",
+    "tagline": "Vintage German brass march, Oom-Pah tuba & the 3 stomps",
+    "description": "Traditional arrangement of 'Auf der Heide blüht ein kleines Blümelein' ('Erika') in G major. Features brass horns, alternating oom-pah tuba bass, and the 3 heavy stomps ('BUM! BUM! BUM!'). Left pot controls marsch-tempo (75-140 BPM), right pot sets tuba depth. Left button cycles 4 voices (Brass, Accordion, Chiptune, Glockenspiel), right button cycles visualizers, hold both for snare roll!",
+    "tags": [
+      "erika",
+      "auf-der-heide",
+      "march",
+      "brass",
+      "oom-pah",
+      "tuba",
+      "german"
+    ],
+    "manual": "AUF_DER_HEIDE_MANUAL.md",
+    "flash_bytes": 5920,
+    "wav_bytes": 1279364
+  },
+  {
+    "id": "zelda_sid",
+    "source": "zelda_sid.cpp",
+    "title": "Legend of Zelda",
+    "tagline": "3-voice SID sound engine with dynamic PWM, fast arps & march",
+    "description": "Full-scale arrangement of Koji Kondo's 1986 Zelda Overworld Theme in Bb major powered by an authentic Commodore 64 SID chiptune engine. Features dynamic pulse-width modulation (PWM LFO), 50Hz tracker-style fast arpeggiator chords, hardware-style ADSR envelopes, and military march snare. Left pot controls quest tempo, right pot sweeps resonant SID filter & PWM depth.",
+    "tags": [
+      "zelda",
+      "sid",
+      "c64",
+      "koji-kondo",
+      "chiptune",
+      "pwm",
+      "arpeggio",
+      "nes"
+    ],
+    "manual": "ZELDA_SID_MANUAL.md",
+    "flash_bytes": 5814,
+    "wav_bytes": 1252820
   }
 ]

@@ -407,5 +407,228 @@ def ave_maria_siberia_frames():
 
 RENDERERS["ave_maria_siberia"] = ave_maria_siberia_frames
 
+# ---------------------------------------------------------------------------
+# 9. lambada.cpp — Copacabana Sunset Waves & Dancing Couple Visualizer
+# ---------------------------------------------------------------------------
+def lambada_frames():
+    frames = []
+    total_frames = 48
+    
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Copacabana Sunset & Waves
+            sun_glow = int(170 + math.sin(f * 0.5) * 70)
+            sun_color = (sun_glow, int(sun_glow * 0.75), 0)
+            wave_crest = (f * 2) % MATRIX_W
+            
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if y == 0:
+                        row.append(sun_color)
+                    elif y == 1:
+                        shift = (x + f) % 5
+                        row.append((max(0, 210 - shift * 25), 30 + shift * 15, 80))
+                    elif y == 2:
+                        shift = (x + f) % 5
+                        row.append((max(0, 130 - shift * 20), 15, 150 + shift * 10))
+                    else: # Ocean wave
+                        if x == wave_crest and (f % 4 in (0, 1)):
+                            row.append((190, 255, 255)) # Whitecap
+                        else:
+                            row.append((0, 120 + x * 20, 220))
+                rows.append(row)
+        else:
+            # Mode 1: Dancing Lambada Couple swaying to 3-3-2 rhythm
+            dancer_pink = (255, 20, 120)
+            partner_gold = (255, 210, 0)
+            foot_accent = (0, 255, 220)
+            bg = (20, 0, 30)
+            sway = 1 if ((f // 4) % 2 == 0) else 2
+
+            for y in range(MATRIX_H):
+                row = [bg] * MATRIX_W
+                if y == 0: # Heads
+                    row[sway] = dancer_pink
+                    row[sway + 1] = partner_gold
+                elif y == 1: # Torso
+                    row[sway] = dancer_pink
+                    row[sway + 1] = partner_gold
+                elif y == 2: # Hips
+                    hip = sway - 1 if (f % 4 < 2) else sway + 1
+                    if 0 <= hip < MATRIX_W:
+                        row[hip] = dancer_pink
+                    row[sway] = partner_gold
+                else: # Feet
+                    bounce = (f % 4 == 0)
+                    row[sway] = foot_accent if bounce else (40, 10, 60)
+                    row[sway + 1] = foot_accent if bounce else (40, 10, 60)
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["lambada"] = lambada_frames
+
+# ---------------------------------------------------------------------------
+# 10. axel_foley.cpp — Beverly Hills Police Beacon & Outrun Synthwave Grid
+# ---------------------------------------------------------------------------
+def axel_foley_frames():
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Beverly Hills Police Cruiser emergency beacons
+            strobe = (f * 2) & 7
+            red = (255, 0, 0) if strobe < 4 else (30, 0, 0)
+            blue = (0, 40, 255) if strobe >= 4 else (0, 5, 30)
+            flash = (255, 255, 255) if (f % 4 == 0) else (20, 20, 20)
+
+            for y in range(MATRIX_H):
+                row = [red, red, flash, blue, blue]
+                rows.append(row)
+        else:
+            # Mode 1: Outrun 80s Synthwave Sunset & Cyber Grid
+            sun_glow = int(140 + math.sin(f * 0.4) * 80)
+            sun = (sun_glow, 20, 160)
+            dusk = (80, 0, 120)
+            grid_shift = f & 3
+            cyan_grid = (0, 220, 255)
+            dark_grid = (0, 20, 40)
+
+            # Row 0: Sun
+            row0 = [(30, 0, 60), sun, (255, 220, 0), sun, (30, 0, 60)]
+            # Row 1: Dusk horizon
+            row1 = [dusk] * MATRIX_W
+            # Row 2 & 3: Moving Cyber Grid
+            row2 = [cyan_grid if ((x + grid_shift) % 2 == 0) else dark_grid for x in range(MATRIX_W)]
+            row3 = [(255, 0, 180) if ((x + grid_shift) % 2 == 0 and f % 2 == 0) else dark_grid for x in range(MATRIX_W)]
+            rows = [row0, row1, row2, row3]
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["axel_foley"] = axel_foley_frames
+
+# ---------------------------------------------------------------------------
+# 11. auf_der_heide.cpp — Blühendes Heidekraut & The 3 Stomps Visualizer
+# ---------------------------------------------------------------------------
+def auf_der_heide_frames():
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        is_stomp = (f in (14, 18, 22, 38, 42, 46))
+
+        if is_stomp:
+            # Stomp explosion in bright golden light!
+            gold = (255, 215, 0)
+            rows = [[gold] * MATRIX_W for _ in range(MATRIX_H)]
+        elif f < 24:
+            # Mode 0: Blühendes Heidekraut (Violet Flowers under Blue Alpine Sky)
+            sky = (20, 80, 220)
+            heath_green = (20, 140, 30)
+            violet = (200, 30, 160)
+            blossom = (255, 230, 80) if (f % 4 == 0) else violet
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if y == 0:
+                        row.append(sky)
+                    else:
+                        is_flower = ((x + y + (f >> 1)) % 3 == 0)
+                        row.append(blossom if is_flower else heath_green)
+                rows.append(row)
+        else:
+            # Mode 1: Alpine Mountain peaks & clouds
+            shift = (f - 24) % MATRIX_W
+            sky = (10, 40, 160)
+            peak = (240, 240, 255)
+            mountain = (60, 80, 100)
+            valley = (40, 160, 40) if (f % 2 == 0) else (20, 80, 20)
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if y == 0: row.append(sky)
+                    elif y == 1: row.append(peak if ((x + shift) % 3 == 0) else mountain)
+                    elif y == 2: row.append(mountain)
+                    else: row.append(valley)
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["auf_der_heide"] = auf_der_heide_frames
+
+# ---------------------------------------------------------------------------
+# 12. zelda_sid.cpp — The Golden Triforce & Master Sword Visualizer
+# ---------------------------------------------------------------------------
+def zelda_sid_frames():
+    triforce_bmp = [
+        0, 0, 1, 0, 0,
+        0, 1, 1, 1, 0,
+        1, 1, 0, 1, 1,
+        1, 0, 0, 0, 1
+    ]
+    master_sword_bmp = [
+        0, 0, 1, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 1, 1, 1, 0,
+        0, 0, 1, 0, 0
+    ]
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: The Golden Triforce & Sacred Realm Aura
+            gold_pulse = int(180 + math.sin(f * 0.4) * 75)
+            gold = (gold_pulse, int(gold_pulse * 0.82), 0)
+            emerald = (0, 70 + int(math.cos(f * 0.4) * 30), 25)
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    is_gold = triforce_bmp[y * MATRIX_W + x]
+                    row.append(gold if is_gold else emerald)
+                rows.append(row)
+        else:
+            # Mode 1: The Master Sword & Holy Light Beam
+            silver = (220, 240, 255)
+            guard = (0, 190, 255)
+            pedestal = (40, 50, 70)
+            beam_glow = int(120 + math.sin(f * 0.5) * 80)
+            ray = (beam_glow // 2, beam_glow, 255)
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    is_sword = master_sword_bmp[y * MATRIX_W + x]
+                    if is_sword:
+                        row.append(guard if y == 2 else silver)
+                    else:
+                        row.append(ray if x == 2 else pedestal)
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["zelda_sid"] = zelda_sid_frames
+
 if __name__ == "__main__":
     main()
+
+
+
+

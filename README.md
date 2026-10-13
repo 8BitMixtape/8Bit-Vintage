@@ -15,6 +15,10 @@ using the AudioBoot bootloader.
 | `deep_minimal.cpp` | Sub-heavy plucks & stripped-down micro-grooves | - |
 | `quantum_matrix_new.cpp` | Quantum DJ: Granular 1-bit bytebeat with chaotic NeoPixel sparks | - |
 | `ave_maria_siberia.cpp` | Ave Maria (Siberia): Liturgical chant, deep pedal drone & Soviet Star | - |
+| `lambada.cpp` | Kaoma's Lambada ("Chorando se foi"): Tropical accordion, Carimbó bass & Zouk groove | [Manual](docs/LAMBADA_MANUAL.md) |
+| `axel_foley.cpp` | Axel Foley ("Axel F"): Harold Faltermeyer 80s synth classic, Moog bass & LinnDrum | [Manual](docs/AXEL_FOLEY_MANUAL.md) |
+| `auf_der_heide.cpp` | Auf der Heide ("Erika"): Vintage German brass march, Oom-Pah tuba & the 3 stomps | [Manual](docs/AUF_DER_HEIDE_MANUAL.md) |
+| `zelda_sid.cpp` | Legend of Zelda (Overworld Theme): 3-voice SID sound engine, dynamic PWM & fast arps | [Manual](docs/ZELDA_SID_MANUAL.md) |
 
 ## Web Audio Player & Flasher
 

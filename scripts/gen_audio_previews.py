@@ -544,6 +544,541 @@ def synth_ave_maria_siberia():
 
     return samples, sample_rate
 
+
+# ---------------------------------------------------------------------------
+# 9. lambada.cpp — Kaoma Lambada Tropical Synth
+# ---------------------------------------------------------------------------
+def synth_lambada():
+    sample_rate = 10000
+    tempo_bpm = 124
+    # 16th note duration in seconds: 60 / (124 * 4) = 0.12097s
+    step_duration = 60.0 / (tempo_bpm * 4.0)
+    samples_per_step = int(sample_rate * step_duration)
+    
+    # 64 steps (4 bars of the legendary hook + 2 bars verse pickup)
+    total_steps = 96
+    total_samples = samples_per_step * total_steps
+    samples = bytearray(total_samples)
+
+    note_table = [
+        0, 392, 440, 466, 523, 554, 587, 659, 698, 784, 880, 932, 1046, 1175
+    ]
+    # Melody indices from lambada.cpp:
+    melody = [
+       7,  8,  7,  6,  5,  6,  7,  7,  0,  0, 10, 10, 10, 10,  8,  7,
+       6,  6,  6,  6,  0,  0,  0,  0,  7,  8,  7,  6,  5,  6,  5,  2,
+       5,  6,  7,  8,  7,  6,  5,  6,  6,  6,  6,  6,  0,  0,  0,  0,
+       0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,  6,
+       7,  8,  7,  6,  5,  6,  7,  7,  0,  0, 10, 10, 10, 10,  8,  7,
+       6,  6,  6,  6,  0,  0,  0,  0,  7,  8,  7,  6,  5,  6,  5,  2
+    ]
+
+    phase_lead = 0
+    phase_bass = 0
+    phase_drum = 0
+    drum_pitch = 0
+    env_lead = 0
+    env_bass = 0
+    env_drum = 0
+    drum_type = 0
+    lfsr = 0xACE1
+    sample_idx = 0
+
+    for step in range(total_steps):
+        bar_step = step & 15
+        note_idx = melody[step % len(melody)]
+        lead_freq = note_table[note_idx]
+        inc_lead = int(lead_freq * (65536.0 / sample_rate)) if lead_freq > 0 else 0
+        if note_idx > 0:
+            env_lead = 250
+
+        # Carimbo bass
+        root_freq = 73.42 # D2
+        if bar_step in (0, 8):
+            inc_bass = int(root_freq * (65536.0 / sample_rate))
+            env_bass = 255
+        elif bar_step in (4, 12):
+            inc_bass = int(root_freq * (65536.0 / sample_rate))
+            env_bass = 180
+        elif bar_step in (6, 14):
+            inc_bass = int((root_freq * 2.0) * (65536.0 / sample_rate))
+            env_bass = 230
+
+        # Drums
+        if bar_step in (0, 8):
+            drum_type = 1
+            drum_pitch = 950
+            env_drum = 255
+        elif bar_step in (6, 14):
+            drum_type = 2
+            env_drum = 230
+        elif bar_step in (3, 11):
+            drum_type = 3
+            env_drum = 160
+        else:
+            drum_type = 3
+            env_drum = 70
+
+        for s in range(samples_per_step):
+            # Noise generator
+            if lfsr & 1:
+                lfsr = (lfsr >> 1) ^ 0xB400
+            else:
+                lfsr = lfsr >> 1
+
+            # Decays
+            if (sample_idx & 7) == 0:
+                if env_drum > 12: env_drum -= 12
+                else: env_drum = 0
+                if env_bass > 4: env_bass -= 4
+                else: env_bass = 0
+            if (sample_idx & 15) == 0:
+                if env_lead > 160: env_lead -= 2
+                elif env_lead > 20: env_lead -= 1
+
+            # Lead (Accordion simulation: saw + pulse with slight chorus)
+            s_lead = 0
+            if inc_lead > 0 and env_lead > 0:
+                vib = 9 if (sample_idx & 0x40) else -9
+                phase_lead = (phase_lead + inc_lead + vib) & 0xFFFF
+                saw = phase_lead >> 8
+                reed2 = 220 if ((phase_lead * 2) & 0x8000) else 35
+                acc = (saw + reed2) >> 1
+                s_lead = (acc * env_lead) >> 8
+
+            # Bass
+            s_bass = 0
+            if env_bass > 0:
+                phase_bass = (phase_bass + inc_bass) & 0xFFFF
+                btri = phase_bass >> 8
+                if btri > 127: btri = 255 - btri
+                s_bass = ((btri << 1) * env_bass) >> 8
+
+            # Drums
+            s_drum = 0
+            if env_drum > 0:
+                if drum_type == 1:
+                    phase_drum = (phase_drum + (drum_pitch << 1)) & 0xFFFF
+                    if drum_pitch > 35: drum_pitch -= 2
+                    kw = phase_drum >> 8
+                    if kw > 127: kw = 255 - kw
+                    s_drum = ((kw << 1) * env_drum) >> 8
+                elif drum_type == 2:
+                    phase_drum = (phase_drum + 400) & 0xFFFF
+                    tone = 180 if (phase_drum & 0x8000) else 70
+                    noise = lfsr & 0xFF
+                    s_drum = (((tone + noise) >> 1) * env_drum) >> 8
+                else:
+                    noise = lfsr & 0xFF
+                    s_drum = (noise * env_drum) >> 8
+
+            mix = (s_bass + (s_lead << 1) + s_drum) >> 2
+            samples[sample_idx] = min(255, max(0, mix))
+            sample_idx += 1
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 10. axel_foley.cpp — Harold Faltermeyer Axel F 80s Synth
+# ---------------------------------------------------------------------------
+def synth_axel_foley():
+    sample_rate = 10000
+    tempo_bpm = 117
+    step_duration = 60.0 / (tempo_bpm * 4.0) # ~0.1282s per 16th note
+    samples_per_step = int(sample_rate * step_duration)
+    
+    # 64 steps (4 bars)
+    total_steps = 64
+    total_samples = samples_per_step * total_steps
+    samples = bytearray(total_samples)
+
+    note_table = [
+        0, 262, 311, 349, 392, 415, 466, 523, 554, 622, 698
+    ]
+    # Axel F melody indices:
+    melody = [
+       3,  0,  0,  3,  0,  5,  0,  3,  3,  0,  6,  3,  3,  0,  2,  0,
+       3,  0,  0,  7,  0,  3,  3,  0,  8,  0,  7,  0,  5,  0,  0,  0,
+       3,  0,  7,  0, 10,  0,  3,  0,  2,  0,  2,  1,  4,  0,  3,  0,
+       0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
+    ]
+
+    phase_lead = 0
+    phase_bass = 0
+    phase_drum = 0
+    drum_pitch = 0
+    env_lead = 0
+    env_bass = 0
+    env_drum = 0
+    drum_type = 0
+    lfsr = 0x5432
+    sample_idx = 0
+
+    for step in range(total_steps):
+        bar_step = step & 15
+        note_idx = melody[step]
+        lead_freq = note_table[note_idx]
+        inc_lead = int(lead_freq * (65536.0 / sample_rate)) if lead_freq > 0 else 0
+        if note_idx > 0:
+            env_lead = 255 # Sharp staccato hit!
+
+        # Moog 16th-note bass
+        root_freq = 87.31 # F2
+        if bar_step in (0, 4, 8, 12):
+            inc_bass = int(root_freq * (65536.0 / sample_rate))
+            env_bass = 250
+        elif bar_step in (2, 6, 10, 14):
+            mult = 2.0 if bar_step == 14 else 1.0
+            inc_bass = int((root_freq * mult) * (65536.0 / sample_rate))
+            env_bass = 200
+
+        # LinnDrum Beat
+        if bar_step in (0, 8):
+            drum_type = 1 # Linn Kick
+            drum_pitch = 1000
+            env_drum = 255
+        elif bar_step in (4, 12):
+            drum_type = 2 # Gated 80s Snare / Clap
+            env_drum = 240
+        elif bar_step in (2, 6, 10, 14):
+            drum_type = 3 # Open Hat
+            env_drum = 150
+        else:
+            drum_type = 3 # Closed Hat
+            env_drum = 60
+
+        for s in range(samples_per_step):
+            if lfsr & 1:
+                lfsr = (lfsr >> 1) ^ 0xB400
+            else:
+                lfsr = lfsr >> 1
+
+            # Fast decays
+            if (sample_idx & 7) == 0:
+                if env_drum > 14: env_drum -= 14
+                else: env_drum = 0
+                if env_bass > 8: env_bass -= 8
+                else: env_bass = 0
+            if (sample_idx & 15) == 0:
+                if env_lead > 24: env_lead -= 24
+                else: env_lead = 0
+
+            # Lead (Jupiter-8 Synth Brass)
+            s_lead = 0
+            if inc_lead > 0 and env_lead > 0:
+                phase_lead = (phase_lead + inc_lead) & 0xFFFF
+                saw = phase_lead >> 8
+                pulse = 230 if (phase_lead & 0x6000) else 25
+                brass = (saw + pulse) >> 1
+                s_lead = (brass * env_lead) >> 8
+
+            # Moog Bass
+            s_bass = 0
+            if env_bass > 0:
+                phase_bass = (phase_bass + inc_bass) & 0xFFFF
+                btri = phase_bass >> 8
+                if btri > 127: btri = 255 - btri
+                s_bass = ((btri << 1) * env_bass) >> 8
+
+            # Drums
+            s_drum = 0
+            if env_drum > 0:
+                if drum_type == 1:
+                    phase_drum = (phase_drum + (drum_pitch << 1)) & 0xFFFF
+                    if drum_pitch > 40: drum_pitch -= 2
+                    kw = phase_drum >> 8
+                    if kw > 127: kw = 255 - kw
+                    s_drum = ((kw << 1) * env_drum) >> 8
+                elif drum_type == 2:
+                    phase_drum = (phase_drum + 450) & 0xFFFF
+                    crack = 200 if (phase_drum & 0x8000) else 50
+                    noise = lfsr & 0xFF
+                    s_drum = (((crack + noise) >> 1) * env_drum) >> 8
+                else:
+                    noise = lfsr & 0xFF
+                    s_drum = (noise * env_drum) >> 8
+
+            mix = (s_bass + (s_lead << 1) + s_drum) >> 2
+            samples[sample_idx] = min(255, max(0, mix))
+            sample_idx += 1
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 11. auf_der_heide.cpp — Vintage German Brass & Oom-Pah Marsch
+# ---------------------------------------------------------------------------
+def synth_auf_der_heide():
+    sample_rate = 10000
+    tempo_bpm = 115
+    step_duration = 60.0 / (tempo_bpm * 4.0)
+    samples_per_step = int(sample_rate * step_duration)
+    
+    # 64 steps (4 bars)
+    total_steps = 64
+    total_samples = samples_per_step * total_steps
+    samples = bytearray(total_samples)
+
+    note_table = [
+        0, 196, 220, 247, 262, 294, 330, 370, 392, 440, 494, 523, 587, 659
+    ]
+    # Erika melody indices (bars 1-4):
+    melody = [
+       5,  5,  8,  8, 10, 10, 12, 12, 12, 12, 10, 10,  8,  8,  0,  0,
+      11, 11,  9,  9,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  5,  5,
+      12, 12, 11, 11,  9,  9,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+       8,  8, 10, 10,  8,  8,  8,  8,  0,  0,  0,  0,  0,  0,  0,  0
+    ]
+
+    phase_lead = 0
+    phase_bass = 0
+    phase_drum = 0
+    drum_pitch = 0
+    env_lead = 0
+    env_bass = 0
+    env_drum = 0
+    drum_type = 0
+    lfsr = 0x9876
+    sample_idx = 0
+
+    for step in range(total_steps):
+        bar = step >> 4
+        bar_step = step & 15
+        note_idx = melody[step]
+        lead_freq = note_table[note_idx]
+        inc_lead = int(lead_freq * (65536.0 / sample_rate)) if lead_freq > 0 else 0
+        if note_idx > 0:
+            env_lead = 250
+
+        # Oom-pah tuba bass (alternating root/fifth)
+        root_freq = 98.0 if bar in (0, 3) else 146.83 # G2 or D3
+        fifth_freq = 146.83 if bar in (0, 3) else 220.0
+        if bar_step in (0, 8):
+            inc_bass = int(root_freq * (65536.0 / sample_rate))
+            env_bass = 255
+        elif bar_step in (4, 12):
+            inc_bass = int(fifth_freq * (65536.0 / sample_rate))
+            env_bass = 210
+
+        # Stomps & March Drums
+        stomp_now = False
+        if bar == 1 and bar_step in (6, 8, 10): stomp_now = True
+        elif bar == 2 and bar_step in (7, 9, 11): stomp_now = True
+
+        if stomp_now:
+            drum_type = 1 # Heavy stomp!
+            drum_pitch = 1100
+            env_drum = 255
+        elif bar_step in (0, 8):
+            drum_type = 1
+            drum_pitch = 850
+            env_drum = 200
+        elif bar_step in (4, 12):
+            drum_type = 2 # March snare
+            env_drum = 190
+        elif (bar_step & 1) == 0:
+            drum_type = 3
+            env_drum = 80
+        else:
+            drum_type = 0
+
+        for s in range(samples_per_step):
+            if lfsr & 1:
+                lfsr = (lfsr >> 1) ^ 0xB400
+            else:
+                lfsr = lfsr >> 1
+
+            # Decays
+            if (sample_idx & 7) == 0:
+                if env_drum > 10: env_drum -= 10
+                else: env_drum = 0
+                if env_bass > 5: env_bass -= 5
+                else: env_bass = 0
+            if (sample_idx & 15) == 0:
+                if env_lead > 16: env_lead -= 16
+                else: env_lead = 0
+
+            # Lead (German Brass Horn)
+            s_lead = 0
+            if inc_lead > 0 and env_lead > 0:
+                phase_lead = (phase_lead + inc_lead) & 0xFFFF
+                saw = phase_lead >> 8
+                pulse = 220 if (phase_lead & 0x7000) else 35
+                brass = (saw + pulse) >> 1
+                s_lead = (brass * env_lead) >> 8
+
+            # Tuba Bass
+            s_bass = 0
+            if env_bass > 0:
+                phase_bass = (phase_bass + inc_bass) & 0xFFFF
+                btri = phase_bass >> 8
+                if btri > 127: btri = 255 - btri
+                s_bass = ((btri << 1) * env_bass) >> 8
+
+            # Drums & Stomp
+            s_drum = 0
+            if env_drum > 0:
+                if drum_type == 1:
+                    phase_drum = (phase_drum + (drum_pitch << 1)) & 0xFFFF
+                    if drum_pitch > 35: drum_pitch -= 2
+                    kw = phase_drum >> 8
+                    if kw > 127: kw = 255 - kw
+                    crunch = kw + ((lfsr & 0x3F) >> 1)
+                    s_drum = (crunch * env_drum) >> 8
+                elif drum_type == 2:
+                    phase_drum = (phase_drum + 400) & 0xFFFF
+                    tone = 190 if (phase_drum & 0x8000) else 60
+                    noise = lfsr & 0xFF
+                    s_drum = (((tone + noise) >> 1) * env_drum) >> 8
+                else:
+                    noise = lfsr & 0xFF
+                    s_drum = (noise * env_drum) >> 8
+
+            mix = (s_bass + (s_lead << 1) + s_drum) >> 2
+            samples[sample_idx] = min(255, max(0, mix))
+            sample_idx += 1
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 12. zelda_sid.cpp — Legend of Zelda Overworld Theme (SID Sound Engine)
+# ---------------------------------------------------------------------------
+def synth_zelda_sid():
+    sample_rate = 10000
+    tempo_bpm = 130
+    step_duration = 60.0 / (tempo_bpm * 4.0) # ~0.1154s per 16th note
+    samples_per_step = int(sample_rate * step_duration)
+    
+    # 64 steps (4 bars)
+    total_steps = 64
+    total_samples = samples_per_step * total_steps
+    samples = bytearray(total_samples)
+
+    note_table = [
+        0, 349, 370, 392, 415, 440, 466, 523, 554, 587, 622, 659, 698, 740, 784, 831, 932
+    ]
+    # Bars 1-4 of Zelda Overworld:
+    melody = [
+       6,  6,  6,  6,  6,  6,  6,  6,  0,  0,  1,  1,  6,  7,  9, 10,
+      12, 12, 12, 12, 12, 12, 12, 12,  0,  0, 12,  0, 12, 12, 13, 15,
+      16, 16, 16, 16, 16, 16, 16, 16,  0,  0, 16,  0, 16, 16, 15, 13,
+      15, 15, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12
+    ]
+
+    # SID Arp Chords (Bb, Eb, Gb, F)
+    arp_chords = [
+        [233, 294, 349], # Bb Major
+        [233, 311, 392], # Eb Major
+        [233, 277, 370], # Gb Major
+        [220, 262, 349]  # F Major
+    ]
+
+    # Bass roots
+    bar_bass = [116.54, 155.56, 185.0, 174.61]
+
+    v1_phase = 0
+    v2_phase = 0
+    v3_phase = 0
+    v1_env = 0
+    v2_env = 0
+    v3_env = 0
+    v3_freq = 0
+    v3_is_drum = 0
+    lfsr = 0x7654
+    sample_idx = 0
+
+    for step in range(total_steps):
+        bar = step >> 4
+        bar_step = step & 15
+        note_idx = melody[step]
+        lead_freq = note_table[note_idx]
+        inc_lead = int(lead_freq * (65536.0 / sample_rate)) if lead_freq > 0 else 0
+        if note_idx > 0:
+            v1_env = 250
+
+        # Voice 2: Arp trigger
+        v2_env = 180
+
+        # Voice 3: Zelda Snare march & Bass
+        is_snare = bar_step in (2, 3, 4, 6, 10, 11, 12, 14)
+        if bar_step in (0, 8):
+            v3_is_drum = 2 # Kick
+            v3_freq = 900
+            v3_env = 250
+        elif is_snare:
+            v3_is_drum = 1 # Snare roll
+            v3_env = 240
+        else:
+            v3_is_drum = 0 # Bass
+            bass_f = bar_bass[bar]
+            v3_freq = int(bass_f * (65536.0 / sample_rate))
+            v3_env = 220
+
+        for s in range(samples_per_step):
+            # 50Hz Fast SID Arp clock (every 200 samples)
+            arp_note_idx = (sample_idx // 180) % 3
+            arp_f = arp_chords[bar][arp_note_idx]
+            inc_arp = int(arp_f * (65536.0 / sample_rate))
+
+            # Noise generator
+            if lfsr & 1:
+                lfsr = (lfsr >> 1) ^ 0xB400
+            else:
+                lfsr = lfsr >> 1
+
+            # ADSR decays
+            if (sample_idx & 7) == 0:
+                if v3_env > 12: v3_env -= 12
+                else: v3_env = 0
+            if (sample_idx & 15) == 0:
+                if v1_env > 190: v1_env -= 4
+                if v2_env > 8: v2_env -= 8
+                else: v2_env = 0
+
+            # Voice 1: PWM LFO Lead (chorused singing pulse width)
+            s1 = 0
+            if inc_lead > 0 and v1_env > 0:
+                lfo = math.sin(sample_idx * 0.003) * 60.0
+                dyn_pw = int(128 + lfo)
+                v1_phase = (v1_phase + inc_lead) & 0xFFFF
+                p1 = v1_phase >> 8
+                pulse = 240 if (p1 < dyn_pw) else 15
+                s1 = (pulse * v1_env) >> 8
+
+            # Voice 2: SID Fast Arp (25% pulse)
+            s2 = 0
+            if v2_env > 0:
+                v2_phase = (v2_phase + inc_arp) & 0xFFFF
+                p2 = v2_phase >> 8
+                pulse2 = 220 if (p2 < 64) else 25
+                s2 = (pulse2 * v2_env) >> 8
+
+            # Voice 3: Bass & March Snare
+            s3 = 0
+            if v3_env > 0:
+                if v3_is_drum == 1:
+                    noise = lfsr & 0xFF
+                    s3 = (noise * v3_env) >> 8
+                elif v3_is_drum == 2:
+                    v3_phase = (v3_phase + (v3_freq << 1)) & 0xFFFF
+                    if v3_freq > 35: v3_freq -= 3
+                    tri = v3_phase >> 8
+                    if tri > 127: tri = 255 - tri
+                    s3 = ((tri << 1) * v3_env) >> 8
+                else:
+                    v3_phase = (v3_phase + v3_freq) & 0xFFFF
+                    tri = v3_phase >> 8
+                    if tri > 127: tri = 255 - tri
+                    s3 = ((tri << 1) * v3_env) >> 8
+
+            mix = (s3 + (s1 << 1) + s2) >> 2
+            samples[sample_idx] = min(255, max(0, mix))
+            sample_idx += 1
+
+    return samples, sample_rate
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -555,6 +1090,10 @@ def main():
         ("deep_minimal", synth_deep_minimal),
         ("quantum_matrix", synth_quantum_matrix),
         ("ave_maria_siberia", synth_ave_maria_siberia),
+        ("lambada", synth_lambada),
+        ("axel_foley", synth_axel_foley),
+        ("auf_der_heide", synth_auf_der_heide),
+        ("zelda_sid", synth_zelda_sid),
     ]
 
     for name, fn in synths:
@@ -564,3 +1103,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
