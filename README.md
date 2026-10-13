@@ -19,6 +19,8 @@ using the AudioBoot bootloader.
 | `axel_foley.cpp` | Axel Foley ("Axel F"): Harold Faltermeyer 80s synth classic, Moog bass & LinnDrum | [Manual](docs/AXEL_FOLEY_MANUAL.md) |
 | `auf_der_heide.cpp` | Auf der Heide ("Erika"): Vintage German brass march, Oom-Pah tuba & the 3 stomps | [Manual](docs/AUF_DER_HEIDE_MANUAL.md) |
 | `zelda_sid.cpp` | Legend of Zelda (Overworld Theme): 3-voice SID sound engine, dynamic PWM & fast arps | [Manual](docs/ZELDA_SID_MANUAL.md) |
+| `kraftwerk_model.cpp` | Kraftwerk ("Das Model"): Minimoog lead, Kling Klang arps, electro drums & Mensch-Maschine visuals | [Manual](docs/KRAFTWERK_MODEL_MANUAL.md) |
+| `kraftwerk_roboter.cpp` | Kraftwerk ("Die Roboter"): Vocoder lead, octave-jumping bass, mechanical drums & robot visuals | [Manual](docs/KRAFTWERK_ROBOTER_MANUAL.md) |
 
 ## Web Audio Player & Flasher
 

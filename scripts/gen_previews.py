@@ -626,6 +626,135 @@ def zelda_sid_frames():
 
 RENDERERS["zelda_sid"] = zelda_sid_frames
 
+
+# ---------------------------------------------------------------------------
+# 13. kraftwerk_model.cpp — Die Mensch-Maschine Mannequin & Kling Klang CRT
+# ---------------------------------------------------------------------------
+def kraftwerk_model_frames():
+    mannequin_bmp = [
+        0, 1, 1, 1, 0,
+        1, 1, 0, 1, 1,
+        1, 1, 0, 1, 1,
+        0, 1, 0, 1, 0
+    ]
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Die Mensch-Maschine (Red Shirt, Black Tie & Beating Heart)
+            red_shirt = (230, 20, 20)
+            black_tie = (15, 15, 18)
+            head_glow = (240, 200, 180)
+            heart_beat = int(180 + math.sin(f * 0.6) * 75)
+            heart_color = (heart_beat, 0, 40)
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    idx = y * MATRIX_W + x
+                    if mannequin_bmp[idx]:
+                        if y == 0:
+                            row.append(head_glow)
+                        elif x == 2:
+                            row.append(heart_color if y == 1 else black_tie)
+                        else:
+                            row.append(red_shirt)
+                    else:
+                        row.append(black_tie)
+                rows.append(row)
+        else:
+            # Mode 1: Kling Klang Studio Oscilloscope (Green CRT trace)
+            crt_bg = (5, 20, 8)
+            beam_y = [
+                min(3, max(0, int(1.5 + math.sin(f * 0.5 + x * 1.4) * 1.2)))
+                for x in range(MATRIX_W)
+            ]
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if y == beam_y[x]:
+                        row.append((120, 255, 140)) # Bright phosphor trace
+                    elif abs(y - beam_y[x]) == 1:
+                        row.append((20, 90, 35))   # Phosphor halo
+                    else:
+                        row.append(crt_bg)
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["kraftwerk_model"] = kraftwerk_model_frames
+
+
+# ---------------------------------------------------------------------------
+# 14. kraftwerk_roboter.cpp — Die Roboter Head & 5-Band Vocoder Spectrum
+# ---------------------------------------------------------------------------
+def kraftwerk_roboter_frames():
+    robot_head_bmp = [
+        0, 1, 1, 1, 0,
+        1, 0, 1, 0, 1,
+        1, 1, 1, 1, 1,
+        0, 1, 1, 1, 0
+    ]
+    frames = []
+    total_frames = 48
+
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Robot Head (Communist Red Casing & Glowing Cyan Visor Eyes)
+            red_casing = (200, 15, 15)
+            metal_dark = (20, 20, 25)
+            eye_pulse = int(180 + math.sin(f * 0.7) * 75)
+            cyan_eyes = (0, eye_pulse, eye_pulse)
+            mouth_led = (240, 240, 255) if (f & 2) else (40, 40, 40)
+
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    idx = y * MATRIX_W + x
+                    is_part = robot_head_bmp[idx]
+                    if not is_part:
+                        row.append(metal_dark)
+                    elif y == 1 and (x == 1 or x == 3):
+                        row.append(cyan_eyes)
+                    elif y == 3:
+                        row.append(mouth_led)
+                    else:
+                        row.append(red_casing)
+                rows.append(row)
+        else:
+            # Mode 1: 5-Band Vocoder Spectrum Analyzer
+            phase = (f - 24) * 0.5
+            heights = [
+                min(4, max(1, int(2.5 + math.sin(phase + i * 1.2) * 1.8)))
+                for i in range(5)
+            ]
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    bar_h = heights[x]
+                    level = 3 - y # 0 is bottom, 3 is top
+                    if level < bar_h:
+                        if level == 3:
+                            row.append((255, 30, 30))   # Red peak
+                        elif level == 2:
+                            row.append((255, 200, 0))  # Amber mid
+                        else:
+                            row.append((0, 230, 60))    # Green base
+                    else:
+                        row.append((5, 15, 8))         # Dark off-LED
+                rows.append(row)
+
+        frames.append(render_frame(rows))
+
+    return frames, 60
+
+RENDERERS["kraftwerk_roboter"] = kraftwerk_roboter_frames
+
 if __name__ == "__main__":
     main()
 

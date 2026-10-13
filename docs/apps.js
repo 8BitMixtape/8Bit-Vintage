@@ -181,5 +181,47 @@ window.APPS = [
     "manual": "ZELDA_SID_MANUAL.md",
     "flash_bytes": 5814,
     "wav_bytes": 1252820
+  },
+  {
+    "id": "kraftwerk_model",
+    "source": "kraftwerk_model.cpp",
+    "title": "Kraftwerk — Das Model",
+    "tagline": "Analog Minimoog lead, Kling Klang arps, electro drums & 16th bass",
+    "description": "An authentic 8-bit multi-voice synthesizer tribute to Kraftwerk's 1978 electro-pop masterpiece 'Das Model' ('The Model' from Die Mensch-Maschine). Features the haunting Minimoog lead, hypnotic 16th-note Kling Klang arpeggios, driving bassline, and punchy electronic drum synthesis. Left pot tunes clock tempo (90-145 BPM), right pot controls VCF low-pass filter cutoff and sub-bass resonance. Left button cycles 4 synth lead voices, right button cycles 4 Kling Klang visualizers (Mensch-Maschine red/black, Oscilloscope, Die Roboter, Radioaktivität), hold both for computer glitch break!",
+    "tags": [
+      "kraftwerk",
+      "das-model",
+      "the-model",
+      "mensch-maschine",
+      "electro",
+      "synthpop",
+      "minimoog",
+      "vocoder",
+      "kling-klang"
+    ],
+    "manual": "KRAFTWERK_MODEL_MANUAL.md",
+    "flash_bytes": 5748,
+    "wav_bytes": 1239548
+  },
+  {
+    "id": "kraftwerk_roboter",
+    "source": "kraftwerk_roboter.cpp",
+    "title": "Kraftwerk — Die Roboter",
+    "tagline": "Vocoder lead, octave-jumping analog bass, mechanical drums & robot visuals",
+    "description": "An authentic 8-bit multi-voice synthesizer tribute to Kraftwerk's 1978 electro anthem 'Die Roboter' / 'The Robots' (from Die Mensch-Maschine). Features the iconic vocoder lead ('Wir sind die Roboter' and 'Ja tvoi sluga...'), menacing 16th-note octave-jumping bassline, high robotic arpeggios, and metronomic electronic drum machine. Left pot tunes robot clock tempo (85-140 BPM), right pot sweeps vocoder pulse width and VCF filter cutoff. Left button cycles 4 robotic timbres (Vocoder Buzz, Minimoog Square, 8-Bit, Metallic Ring), right button cycles 4 visualizers (Die Roboter Head, Walking Automaton, 5-Band Spectrum, Cyrillic Teletype), hold both for robot malfunction overload!",
+    "tags": [
+      "kraftwerk",
+      "die-roboter",
+      "the-robots",
+      "mensch-maschine",
+      "electro",
+      "vocoder",
+      "synthpop",
+      "kling-klang",
+      "industrial"
+    ],
+    "manual": "KRAFTWERK_ROBOTER_MANUAL.md",
+    "flash_bytes": 5610,
+    "wav_bytes": 1213004
   }
 ];

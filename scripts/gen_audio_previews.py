@@ -1079,6 +1079,341 @@ def synth_zelda_sid():
 
     return samples, sample_rate
 
+
+# ---------------------------------------------------------------------------
+# 13. kraftwerk_model.cpp — Kraftwerk "Das Model"
+# ---------------------------------------------------------------------------
+def synth_kraftwerk_model():
+    sample_rate = 10000
+    bpm = 124.0
+    step_duration = (60.0 / bpm) / 4.0 # 16th note ~ 0.121s
+    samples_per_step = int(sample_rate * step_duration)
+    total_steps = 128 # 8 bars of electro-pop perfection
+    total_samples = total_steps * samples_per_step
+    samples = bytearray(total_samples)
+
+    # Note frequencies in Hz
+    # 0: REST, 1: G#4, 2: A4, 3: B4, 4: C5, 5: D5, 6: E5, 7: F5
+    note_table = [0.0, 415.3, 440.0, 493.88, 523.25, 587.33, 659.25, 698.46]
+
+    lead_melody = [
+        # Bar 1: E5 C5 A4 E5
+        6, 6, 6, 6, 4, 4, 4, 4, 2, 2, 2, 2, 6, 6, 6, 6,
+        # Bar 2: F5 D5 A4 F5
+        7, 7, 7, 7, 5, 5, 5, 5, 2, 2, 2, 2, 7, 7, 7, 7,
+        # Bar 3: E5 B4 G#4 E5
+        6, 6, 6, 6, 3, 3, 3, 3, 1, 1, 1, 1, 6, 6, 6, 6,
+        # Bar 4: E5 C5 A4 hold
+        6, 6, 6, 6, 4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2,
+        # Bar 5: E5 C5 A4 E5
+        6, 6, 6, 6, 4, 4, 4, 4, 2, 2, 2, 2, 6, 6, 6, 6,
+        # Bar 6: F5 D5 A4 F5
+        7, 7, 7, 7, 5, 5, 5, 5, 2, 2, 2, 2, 7, 7, 7, 7,
+        # Bar 7: E5 B4 G#4 B4
+        6, 6, 6, 6, 3, 3, 3, 3, 1, 1, 1, 1, 3, 3, 3, 3,
+        # Bar 8: A4 hold ... turnaround
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0,
+    ]
+
+    # Bar roots (Am, Dm, E, Am, Am, Dm, E, Am)
+    bar_roots = [110.0, 146.83, 164.81, 110.0, 110.0, 146.83, 164.81, 110.0]
+    arp_triads = [
+        [220.0, 261.63, 329.63], # Am
+        [146.83, 174.61, 220.0],  # Dm
+        [164.81, 207.65, 246.94], # E
+        [220.0, 261.63, 329.63]  # Am
+    ]
+
+    phase_lead = 0
+    phase_arp = 0
+    phase_bass = 0
+    phase_drum = 0
+    drum_pitch = 0
+    drum_type = 0
+    env_lead = 0
+    env_arp = 0
+    env_bass = 0
+    env_drum = 0
+    arp_tick = 0
+    inc_bass = 0
+    inc_lead = 0
+    inc_arp = 0
+    lfsr = 0x8351
+    sample_idx = 0
+    prev_note_idx = 0
+
+    for step in range(total_steps):
+        bar = step >> 4
+        bar_step = step & 15
+        chord_idx = bar & 3
+
+        # Lead melody
+        note_idx = lead_melody[step]
+        lead_freq = note_table[note_idx]
+        inc_lead = int(lead_freq * (65536.0 / sample_rate)) if lead_freq > 0 else 0
+        if note_idx > 0:
+            if note_idx != prev_note_idx or (bar_step & 3) == 0:
+                env_lead = 255
+        prev_note_idx = note_idx
+
+        # 16th-note Kling Klang Arp
+        arp_tick = (arp_tick + 1) % 3
+        arp_freq = arp_triads[chord_idx][arp_tick]
+        inc_arp = int(arp_freq * (65536.0 / sample_rate))
+        env_arp = 150
+
+        # Driving Bass
+        if bar_step in (0, 3, 6, 8, 11, 14):
+            root_f = bar_roots[bar]
+            inc_bass = int(root_f * (65536.0 / sample_rate))
+            env_bass = 250
+
+        # Electronic Drums
+        if bar_step in (0, 8):
+            drum_type = 1
+            drum_pitch = 950
+            env_drum = 250
+        elif bar_step in (4, 12):
+            drum_type = 2
+            env_drum = 230
+        elif (bar_step & 1) == 0:
+            drum_type = 3
+            env_drum = 90
+        else:
+            drum_type = 3
+            env_drum = 40
+
+        for s in range(samples_per_step):
+            # Noise generator
+            if lfsr & 1:
+                lfsr = (lfsr >> 1) ^ 0xB400
+            else:
+                lfsr = lfsr >> 1
+
+            # Decays
+            if (sample_idx & 7) == 0:
+                if env_drum > 14: env_drum -= 14
+                else: env_drum = 0
+                if env_bass > 10: env_bass -= 10
+                else: env_bass = 0
+                if env_arp > 12: env_arp -= 12
+                else: env_arp = 0
+            if (sample_idx & 15) == 0:
+                if env_lead > 16: env_lead -= 16
+                else: env_lead = 0
+
+            # Voice 1: Lead (Minimoog pulse)
+            s_lead = 0
+            if inc_lead > 0 and env_lead > 0:
+                phase_lead = (phase_lead + inc_lead) & 0xFFFF
+                p = phase_lead >> 8
+                pulse = 230 if p < 120 else 25
+                s_lead = (pulse * env_lead) >> 8
+                s_lead = (s_lead * 210) >> 8
+
+            # Voice 2: Arp (Narrow pulse)
+            s_arp = 0
+            if inc_arp > 0 and env_arp > 0:
+                phase_arp = (phase_arp + inc_arp) & 0xFFFF
+                ap = 220 if (phase_arp >> 8) < 64 else 35
+                s_arp = (ap * env_arp) >> 8
+
+            # Voice 3: Bass (Triangle)
+            s_bass = 0
+            if inc_bass > 0 and env_bass > 0:
+                phase_bass = (phase_bass + inc_bass) & 0xFFFF
+                btri = phase_bass >> 8
+                if btri > 127: btri = 255 - btri
+                s_bass = ((btri << 1) * env_bass) >> 8
+                s_bass = (s_bass * 220) >> 8
+
+            # Voice 4: Drums
+            s_drum = 0
+            if env_drum > 0:
+                if drum_type == 1:
+                    phase_drum = (phase_drum + (drum_pitch << 1)) & 0xFFFF
+                    if drum_pitch > 35: drum_pitch -= 3
+                    kw = phase_drum >> 8
+                    if kw > 127: kw = 255 - kw
+                    s_drum = ((kw << 1) * env_drum) >> 8
+                else:
+                    noise = lfsr & 0xFF
+                    s_drum = (noise * env_drum) >> 8
+
+            mix = (s_bass + (s_lead << 1) + s_arp + s_drum) >> 2
+            samples[sample_idx] = min(255, max(0, mix))
+            sample_idx += 1
+
+    return samples, sample_rate
+
+
+# ---------------------------------------------------------------------------
+# 14. kraftwerk_roboter.cpp — Kraftwerk "Die Roboter" (MOS 6581 SID Engine)
+# ---------------------------------------------------------------------------
+def synth_kraftwerk_roboter():
+    sample_rate = 10000
+    bpm = 115.0
+    step_duration = (60.0 / bpm) / 4.0 # 16th note ~ 0.1304s
+    samples_per_step = int(sample_rate * step_duration)
+    total_steps = 128 # 8 bars (Hook riff + Vocoder "Wir sind die Roboter" + "Ja tvoi sluga...")
+    total_samples = total_steps * samples_per_step
+    samples = bytearray(total_samples)
+
+    # Note frequencies in Hz (11 notes)
+    # 0: REST, 1: B3, 2: D4, 3: E4, 4: F#4, 5: G4, 6: A4, 7: B4, 8: D5, 9: E5, 10: G5
+    roboter_notes = [0.0, 246.94, 293.66, 329.63, 369.99, 392.00, 440.00, 493.88, 587.33, 659.25, 783.99]
+
+    lead_melody = [
+        # Bar 1: E5 B4 G4 E4 D4 G4 B4 D5
+        9,  9,  7,  7,  5,  5,  3,  3,  2,  2,  5,  5,  7,  7,  8,  8,
+        # Bar 2: E5 B4 G4 E4 D4 G4 B4 D5
+        9,  9,  7,  7,  5,  5,  3,  3,  2,  2,  5,  5,  7,  7,  8,  8,
+        # Bar 3: D5 B4 F#4 D4 C4 E4 G4 B4
+        8,  8,  7,  7,  4,  4,  2,  2,  3,  3,  5,  5,  7,  7,  8,  8,
+        # Bar 4: E5 B4 G4 E4 turnaround
+        9,  9,  7,  7,  5,  5,  3,  3,  9,  9,  7,  7,  0,  0,  0,  0,
+
+        # Bar 5: "Wir sind die Ro-bo-ter"
+        3,  3,  5,  5,  7,  7,  9,  9,  9,  9,  8,  8,  7,  7,  0,  0,
+        # Bar 6: "Wir sind die Ro-bo-ter"
+        3,  3,  5,  5,  7,  7,  9,  9,  9,  9,  8,  8,  7,  7,  0,  0,
+        # Bar 7: "Ja tvoi sluga, ja tvoi rabotnik"
+        1,  1,  2,  2,  3,  3,  5,  5,  5,  4,  3,  3,  2,  2,  3,  0,
+        # Bar 8: "Wir sind die Ro-bo-ter"
+        3,  3,  5,  5,  7,  7,  9,  9,  9,  9,  8,  8,  7,  7,  0,  0,
+    ]
+
+    # Bar roots (Em, Em, D, Em, Em, Em, C, Em)
+    bar_roots = [82.41, 82.41, 73.42, 82.41, 82.41, 82.41, 65.41, 82.41]
+
+    # 50Hz Fast SID Arp Chords (Em, D, C, B)
+    sid_arp_chords = [
+        [329.63, 392.00, 493.88], # Em: E4, G4, B4
+        [293.66, 369.99, 440.00], # D:  D4, F#4, A4
+        [261.63, 329.63, 392.00], # C:  C4, E4, G4
+        [246.94, 311.13, 369.99], # B:  B3, D#4, F#4
+    ]
+
+    v1_phase = 0
+    v2_phase = 0
+    v3_phase = 0
+    v1_env = 0
+    v2_env = 0
+    v3_env = 0
+    v3_freq = 0
+    v3_is_drum = 0
+    lfsr = 0x5183
+    sample_idx = 0
+    prev_note_idx = 0
+    flt_lp = 0.0
+    flt_bp = 0.0
+
+    for step in range(total_steps):
+        bar = step >> 4
+        bar_step = step & 15
+        chord_idx = bar & 3
+
+        # Lead melody
+        note_idx = lead_melody[step]
+        lead_freq = roboter_notes[note_idx]
+        inc_lead = int(lead_freq * (65536.0 / sample_rate)) if lead_freq > 0 else 0
+        if note_idx > 0:
+            if note_idx != prev_note_idx or (bar_step & 1) == 0:
+                v1_env = 255
+        else:
+            v1_env = 0
+        prev_note_idx = note_idx
+
+        # Voice 2: SID Tracker Arp Trigger
+        v2_env = 190
+
+        # Voice 3: Bass & Drums
+        root_f = bar_roots[bar]
+        if bar_step in (0, 8):
+            v3_is_drum = 2 # Kick
+            v3_freq = 980
+            v3_env = 255
+        elif bar_step in (4, 12):
+            v3_is_drum = 1 # Snare / Clap
+            v3_env = 240
+        else:
+            v3_is_drum = 0 # Bass (octave bounce)
+            bass_f = (root_f * 2.0) if (bar_step & 1) else root_f
+            v3_freq = int(bass_f * (65536.0 / sample_rate))
+            v3_env = 240
+
+        for s in range(samples_per_step):
+            # 50Hz Fast Tracker Arp clock (every 200 samples)
+            arp_idx = (sample_idx // 180) % 3
+            arp_freq = sid_arp_chords[chord_idx][arp_idx]
+            inc_arp = int(arp_freq * (65536.0 / sample_rate))
+
+            # LFSR Noise generator
+            if lfsr & 1:
+                lfsr = (lfsr >> 1) ^ 0xB400
+            else:
+                lfsr = lfsr >> 1
+
+            # ADSR Envelopes
+            if (sample_idx & 7) == 0:
+                d = 16 if (v3_is_drum == 1) else (14 if v3_is_drum == 2 else 10)
+                if v3_env > d: v3_env -= d
+                else: v3_env = 0
+                if v2_env > 8: v2_env -= 8
+                else: v2_env = 0
+            if (sample_idx & 15) == 0:
+                if v1_env > 4: v1_env -= 4
+
+            # Voice 1: SID Dynamic PWM Brass Lead (~4Hz LFO chorus)
+            s1 = 0
+            if inc_lead > 0 and v1_env > 0:
+                v1_phase = (v1_phase + inc_lead) & 0xFFFF
+                lfo = (sample_idx & 0x80) if not (sample_idx & 0x100) else (255 - (sample_idx & 0x80))
+                dyn_pw = 32768 + (lfo - 128) * 120
+                pulse1 = 245 if (v1_phase < dyn_pw) else 15
+                s1 = (pulse1 * v1_env) >> 8
+
+            # Voice 2: SID 25% Duty Cycle Pulse Wave Fast Arp
+            s2 = 0
+            if v2_env > 0:
+                v2_phase = (v2_phase + inc_arp) & 0xFFFF
+                pulse2 = 230 if ((v2_phase >> 8) < 64) else 25
+                s2 = (pulse2 * v2_env) >> 8
+
+            # Voice 3: SID Bass & Drums
+            s3 = 0
+            if v3_env > 0:
+                if v3_is_drum == 1:
+                    noise = lfsr & 0xFF
+                    s3 = (noise * v3_env) >> 8
+                elif v3_is_drum == 2:
+                    v3_phase = (v3_phase + (v3_freq << 1)) & 0xFFFF
+                    if v3_freq > 40: v3_freq -= 4
+                    tri = v3_phase >> 8
+                    if tri > 127: tri = 255 - tri
+                    s3 = ((tri << 1) * v3_env) >> 8
+                else:
+                    v3_phase = (v3_phase + v3_freq) & 0xFFFF
+                    tri = v3_phase >> 8
+                    if tri > 127: tri = 255 - tri
+                    s3 = ((tri << 1) * v3_env) >> 8
+
+            # 3-Voice Mix
+            dry = (s3 + (s1 << 1) + s2) >> 2
+
+            # MOS 6581 Resonant Filter Simulation
+            cutoff = 0.65
+            res = 0.25
+            res_in = dry - (flt_bp * res)
+            flt_lp += (res_in - flt_lp) * cutoff
+            flt_bp = res_in - flt_lp
+
+            filtered = int(flt_lp)
+            samples[sample_idx] = min(255, max(0, filtered))
+            sample_idx += 1
+
+    return samples, sample_rate
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -1094,6 +1429,8 @@ def main():
         ("axel_foley", synth_axel_foley),
         ("auf_der_heide", synth_auf_der_heide),
         ("zelda_sid", synth_zelda_sid),
+        ("kraftwerk_model", synth_kraftwerk_model),
+        ("kraftwerk_roboter", synth_kraftwerk_roboter),
     ]
 
     for name, fn in synths:
