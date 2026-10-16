@@ -36,6 +36,13 @@ This skill captures the philosophy, history, hardware architecture, firmware con
 | **Gär Lämpli** | Bio-sensing visual/audio module | Born from Hackteria DIY bio-art camps to monitor fermentation activity via audio/light. |
 | **MS-20 Filter Mixtape & ABK-20** | Desktop Wedge Console / Cassette | Merges the 8-bit digital synth core with an analog clone of the iconic **Korg MS-20 resonant state-variable VCF** (developed by Claude Winterberg & Christoph Stähli). Features 5x4 matrix, rotary knob, toggle switch, and 3.5mm jacks. |
 
+### Sister ATtiny85 Projects & Community Constellation
+* **Noisio (Steffen Koritsch, Dresden)**: The **ATtiny Punk Console (ATPC)** features 10 built-in algorithms, skin-resistance body contacts, tone low-pass filter, CV/gate, and smartphone audio programming. Also created the *Photonotron* (light-controlled optical theremin) and *Levitation OSC* (10-voice drone synth).
+* **Jan Ostman / DSP Synthesizers (Sweden)**: Creator of the **Synsonique Drum** (capacitive-touch pocket drum machine) which officially adopted **TinyAudioBoot** for audio-jack flashing. Also designed 8-pin DSP chips emulating Solina strings, Minimoog, and 808 drums.
+* **Standuino / Bastl Instruments (Brno)**: Václav Peloušek and Ondřej Merta's DIY micro-synth roots (*FraAngelico*, *2pi-whitenoise*, and *microGranny*), evolving into the open-source *Kastle* modular synth.
+* **Auduino (Peter Knight / Tinker.it)**: Granular synthesis running two triangle-wave phase accumulators on 8-bit AVR.
+* **SGMK 8Step Mixtape "Berliner Schule"**: Adam Berger's pocket 8-step sequencer driving vintage modular gear (featured on Matrixsynth).
+
 ---
 
 ## 3. Electrical Architecture & ATtiny85 Pin Multiplexing
