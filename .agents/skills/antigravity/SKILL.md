@@ -29,7 +29,7 @@ This document provides essential context, architectural patterns, and workflow i
 | **PB2** | Analog In | `POTI_LEFT` / `ADC1` | Left Control Pot |
 | **PB3** | Analog In | `BUTTON_PIN` | Resistor Ladder Buttons |
 | **PB4** | Analog In | `POTI_RIGHT` / `ADC2` | Right Control Pot |
-| **PB5** | Reset | - | ISP Programming / Reset |
+| **PB5** | Reset / GPIO | `RESET_PIN` | Default Hardware Reset. If `RSTDISBL` fuse is programmed, usable as GPIO / MIDI IN (PCINT5) / Sync. AudioBoot bootloader relies on Power-On Reset (power switch), so audio uploads remain functional without hardware reset pin. (Note: Restoring SPI ISP requires 12V HVSP). |
 
 ---
 
