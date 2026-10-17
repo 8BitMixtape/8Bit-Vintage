@@ -21,11 +21,10 @@ This compendium charts:
 ## 1. Deep History & The Coconut Lineage
 
 ```
-2007            2011            2012             2013                  2015            2016-2018         2019+
-SGMK            CACR, Goa       BabyGnusbuino    Yogyakarta            Bangalore       NEO & TinyAudioBoot  ABK-20
-HomeMade Camps  "Wave-to-MIDI   (Michi Egger,    Lifepatch & HONF      CocoMake7       Cassettes, EuroRack,  MS-20 Filter
-(Switzerland)    Coconut"        a.n.y.m.a.)      Viznut Bytebeats      (Hackteria)     Synsonique Drum,      Desktop Wedge
-                                                 First Cassette Tape                   Noisio & Global Labs   Console
+2007            2011            2012             2013                  2015            2016-2018         2019+         2026 (2083 BS)
+SGMK            CACR, Goa       BabyGnusbuino    Yogyakarta            Bangalore       NEO & Bootloader  ABK-20        Kathmandu / Lalitpur
+HomeMade Camps  "Wave-to-MIDI   (Michi Egger,    Lifepatch & HONF      CocoMake7       Cassettes, Euro   MS-20 Filter  GOSH 2026 Gathering
+(Switzerland)    Coconut"        a.n.y.m.a.)      Viznut Bytebeats      (Hackteria)     K_Space CocoSat   Desktop       with Karkhana Samuha
 ```
 
 ### 1.1 SGMK & HomeMade SummerCamps (2007–2011)
@@ -33,25 +32,43 @@ The philosophical foundation originated within the **Schweizerische Gesellschaft
 * Early workshops explored 8-bit sound generation on Atmel microcontrollers, heavily inspired by early AVR audio pioneers like Christoph Haberer (*atmegaSID*, Roboterclub Freiburg).
 * The core ethos was established: direct manipulation of silicon timers, hands-on etching, scavenging discarded electronic waste, and demystifying digital signal processing.
 
-### 1.2 The Center for Alternative Coconut Research (Goa, 2011)
-During an art-and-science residency in Goa, India, the **Center for Alternative Coconut Research (CACR)** was founded by dusjagr (Marc Dusseiller) and cohorts. The inaugural project addressed a delightfully surreal brief:
-> *"We really needed to put a GNUSB into a Coconut for a 'Wave-to-MIDI' converter."*
+### 1.2 Yashas Shetty & The Center for Alternative Coconut Research (Goa, 2011)
+During an art-and-science residency in Goa, India, the **Center for Alternative Coconut Research (CACR)** (*Nichtnormale Kokosnuss Forschungsstätte* / 替代椰子研究中心) was co-founded by **Yashas Shetty** (artist, composer, founder of *(Art)ScienceBLR* at the Srishti Institute, and co-founder of *Hackteria* alongside Marc Dusseiller and Andy Gracie) and **Marc Dusseiller (dusjagr)**:
+* **The Coconut Epiphany**: While debating the relentless hype of Western startup culture and the "innovation frenzy" on the beach, Yashas and Marc realized that traditional tropical societies had already developed sophisticated, localized, and ecological technologies around the coconut tree for centuries. High-tech corporate "innovation" was largely inventing solutions to non-existent problems.
+* **The Wave-to-MIDI Coconut**: Their inaugural experimental intervention was playfully literal:
+  > *"We really needed to put a GNUSB into a Coconut for a 'Wave-to-MIDI' converter."*
+  They mounted Michael Egger's early SGMK AVR board inside a carved coconut shell, turning ocean wave motion and touch into MIDI notes.
+* The coconut permanently became the mascot and conceptual vessel of tropical DIY bio-hacking, open-source hardware independence, and low-cost nomad science. Rather than a formal institution, CACR represents an intellectual stance: subverting high-tech academic and corporate gatekeeping with organic, found, and accessible materials.
 
-The coconut became a lasting emblem of tropical DIY bio-hacking, open-source hardware independence, and low-cost nomad science.
+### 1.3 The Philosophy: "Smart Coconuts for Stupid Cities"
+In lectures and symposia worldwide (such as the *Transformaking Symposium* in Yogyakarta, 2015), dusjagr and CACR developed the philosophical critique **"Smart Coconuts for Stupid Cities"**:
+* **Critique of Techno-Solutionism**: A direct satirical assault on corporate "Smart City" propaganda, surveillance capitalism, and over-engineered IoT cloud sensors.
+* **The Coconut as Ideal Sensor Node**: Why deploy fragile $500 proprietary environmental sensors when a coconut possesses natural moisture retention, organic acoustic resonance, electrolytic conductivity, biodegradable casing, and zero subscription fees?
+* **OCPC ("One Coconut Per Child")**: A playful counter to Nicholas Negroponte's "One Laptop Per Child" (OLPC). Rather than exporting proprietary digital screens, OCPC advocates giving children an open-source ATtiny inside an organic shell—teaching physical computing, capacitive sensing, and bytebeat synthesis from first principles.
 
-### 1.3 The BabyGnusbuino (2012)
+### 1.4 The BabyGnusbuino (2012)
 In 2012, Michael Egger (*a.n.y.m.a.*) introduced the **BabyGnusbuino** (BabyGnusbuino-v2) at the SGMK DIY-Umtrunk in Zurich. Packaging an ATtiny85 with a direct PCB USB tongue and Arduino compatibility, it proved that an ultra-cheap 8-pin microchip could handle complex interactive tasks and serve as a versatile musical generator.
 
-### 1.4 Yogyakarta: The Bytebeat Epiphany (2013)
+### 1.5 Yogyakarta: The Bytebeat Epiphany (2013)
 In 2013, dusjagr traveled to Yogyakarta, Indonesia, collaborating with the pioneering citizen-science and media-art communities **Lifepatch** and **HONF (House of Natural Fiber)**:
 * During workshops with Budi Prakosa (*manticore*), Andreas Siagian, and local hackers, they encountered Finnish demoscener **Ville-Matias Heikkilä's (Viznut)** 2011 discovery: **Algorithmic Bytebeats**.
 * Viznut demonstrated that a single line of C code evaluating bitwise operators against an incrementing time variable `t` could generate polyphonic counterpoints, percussion, and evolving basslines without tables or memory buffers.
 * Realizing the ATtiny85 was ideally suited to compute these formulas at an 8 kHz clock rate, they crafted the circuit into the shape and dimensions of an **audio compact cassette**, placing the control potentiometers directly inside the cassette tape reel holes.
 * Thus, the **8Bit Mixtape** emerged: a cassette that contained its own synthesizer.
 
-### 1.5 Bangalore & Kathmandu (2015–2016)
-* **CocoMake7 (Bangalore, 2015)**: Collaboration between Hackteria, Srishti Institute of Art, Design and Technology, and local artists to develop ultra-accessible paper circuit boards and wearable sound modules.
-* **K_Space / CocoSat (Kathmandu, 2016)**: The Kathmandu Space Programme, exploring micro-satellite telemetry and sensory electronics humorously framed as *"How to put a coconut satellite in low earth orbit?"*.
+### 1.6 Bangalore: Yashas Shetty, (Art)ScienceBLR & CocoMake7 (2015)
+In Bangalore, India, the coconut philosophy evolved into accessible open hardware through **Yashas Shetty** and the **(Art)ScienceBLR** laboratory at the Srishti Institute of Art, Design and Technology:
+* **CocoMake7**: Conceived as a radical *Jugaad* (frugal innovation) alternative to the commercial *Makey Makey*. While commercial kits were expensive and import-dependent, CocoMake7 stripped the interface down to an ATtiny85/ATtiny84.
+* **Capacitive Touch on Found Objects**: Utilizing ADC-based capacitive sensing (`QTouchADC`), CocoMake7 allowed students to create touch-sensitive controllers out of graphite pencil drawings, tropical fruits, conductive liquids, and raw coconut shells. Paired with the visual *CocoBlock* environment and pure AVR synth code, it demystified computing for hundreds of students in India and across the Hackteria network.
+* **NEO Coconut / Micro Coconut**: The minimal circular/square core PCB (ATtiny85 + WS2812 RGB LED + 3.5mm jack for audio and TinyAudioBoot). Stripped of potentiometers and external frames, it was explicitly created to be stuffed inside organic enclosures: actual hollowed coconuts, bamboo poles, or fermentation jars (e.g. the **"Gär Lämpli"** for monitoring koji/miso fermentation curves with DS18B20 1-wire sensors).
+* **CocoSynth**: ChrisMicro's adaptation of illutron's `the_synth` library to ATtiny85, providing wavetable polyphony specifically tuned for the Coconut form-factor.
+* **K_Space / CocoSat (Kathmandu, 2016)**: The Kathmandu Space Programme with Karkhana, exploring micro-satellite telemetry, solar cells, and environmental logging humorously packaged inside coconut shells: *"How to put a coconut satellite in low orbit?"*.
+
+### 1.7 Kathmandu & Lalitpur: GOSH 2026 / 2083 BS & Karkhana Samuha (September–October 2026)
+A decade after the initial *K_Space* experiments, the Coconut trajectory and open-hardware lineage returned to the Kathmandu Valley in full force:
+* **The Journey (September 2026)**: dusjagr journeyed from Zurich through Bangalore (reconnecting with Yashas Shetty and the *(Art)ScienceBLR* circle) to Kathmandu, Nepal.
+* **GOSH 2026 / 2083 BS**: Hosted in Nepal's Bikram Sambat year **2083 BS** (October 3–6, 2026) at the Heritage Garden in Lalitpur, co-organized by **Karkhana Samuha** (celebrating their 10th anniversary of experiential maker education) and the global Gathering for Open Science Hardware (GOSH).
+* **The Living Coconut in the Himalayas**: The event reunited the grassroots DIY bio, low-cost sensor, and open music hardware communities. Discussions, workshops, and zines revisited *"How to (not) innovate with a coconut"*, contrasting localized, community-driven tools with high-tech academic elitism and bringing the tropical Goan CACR spirit into the high-altitude Himalayan maker movement.
 
 ---
 
