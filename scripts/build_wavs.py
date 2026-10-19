@@ -48,7 +48,8 @@ def main() -> int:
         # hex2wav runs as a post-action on the .hex, so force it to regenerate
         BUILD_WAV.unlink(missing_ok=True)
         BUILD_HEX.unlink(missing_ok=True)
-        res = subprocess.run(["pio", "run", "-e", ENV], cwd=ROOT, env=env)
+        pio_bin = shutil.which("pio") or os.path.expanduser("~/.platformio/penv/bin/pio")
+        res = subprocess.run([pio_bin, "run", "-e", ENV], cwd=ROOT, env=env)
         if res.returncode != 0 or not BUILD_WAV.exists():
             print(f"!! build failed for {app['id']}")
             failed.append(app["id"])

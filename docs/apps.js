@@ -393,5 +393,25 @@ window.APPS = [
     "manual": "BYTEBEAT_AMBIENT_MANUAL.md",
     "flash_bytes": 3974,
     "wav_bytes": 881204
+  },
+  {
+    "id": "bach_air_g_string",
+    "source": "bach_air_g_string.cpp",
+    "title": "Bach: Air on the G String",
+    "tagline": "Baroque polyphony, walking bass & classical suite",
+    "description": "3-voice polyphony with walking bass, harpsichord arpeggios, and soaring violin cantabile with delayed vibrato. Features 4 classical masterpieces (Bach's Air on the G String, Pachelbel's Canon in D, Vivaldi's Winter, Beethoven's Moonlight Sonata), 4 instrument timbres (Chamber Strings, Cathedral Organ, Glass Harmonica, Switched-On Moog), and 4 NeoPixel visualizers.",
+    "tags": [
+      "classical",
+      "bach",
+      "polyphony",
+      "baroque",
+      "arpeggio",
+      "pachelbel",
+      "vivaldi",
+      "beethoven"
+    ],
+    "manual": "BACH_AIR_G_STRING_MANUAL.md",
+    "flash_bytes": 6186,
+    "wav_bytes": 1332452
   }
 ];

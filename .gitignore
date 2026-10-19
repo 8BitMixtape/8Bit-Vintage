@@ -7,3 +7,5 @@ compile_commands.json
 .vscode/launch.json
 .vscode/ipch
 scratch/
+__pycache__/
+*.pyc

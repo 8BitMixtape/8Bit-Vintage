@@ -1141,6 +1141,56 @@ def bytebeat_ambient_frames():
 RENDERERS["bytebeat_ambient"] = bytebeat_ambient_frames
 
 
+# ---------------------------------------------------------------------------
+# 23. bach_air_g_string.cpp — Baroque Candelabra & Cathedral Stained Glass
+# ---------------------------------------------------------------------------
+def bach_air_frames():
+    frames = []
+    total_frames = 48
+    for f in range(total_frames):
+        rows = []
+        if f < 24:
+            # Mode 0: Golden Baroque Candelabra & Candlelight flicker
+            flicker = (f * 7) & 31
+            c_gold = (255 - flicker, 175 - (flicker // 2), 10)
+            c_candle = (180, 70, 5)
+            c_bg = (12, 4, 1)
+            flame_h = int(1 + (math.sin(f * 0.4) + 1.0) * 1.0)
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if x in (1, 2, 3) and y >= 2:
+                        row.append(c_candle)
+                    elif x == 2 and y == max(0, 3 - flame_h):
+                        row.append(c_gold)
+                    elif x == 1 and y == (1 if (f & 2) else 0):
+                        row.append(c_gold)
+                    elif x == 3 and y == (0 if (f & 4) else 1):
+                        row.append(c_gold)
+                    else:
+                        row.append(c_bg)
+                rows.append(row)
+        else:
+            # Mode 1: Cathedral Stained Glass Rose Window
+            palette = [
+                (0, 40, 220),   # Sapphire
+                (210, 10, 30),  # Ruby
+                (10, 190, 60),  # Emerald
+                (170, 20, 200), # Amethyst
+            ]
+            pulse = 0.7 + 0.3 * math.sin(f * 0.5)
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    base = palette[(x + y + (f >> 2)) & 3]
+                    row.append(tuple(int(c * pulse) for c in base))
+                rows.append(row)
+        frames.append(render_frame(rows))
+    return frames, 60
+
+RENDERERS["bach_air_g_string"] = bach_air_frames
+
+
 if __name__ == "__main__":
     main()
 

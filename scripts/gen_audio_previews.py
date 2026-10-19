@@ -1912,6 +1912,103 @@ def synth_bytebeat_ambient():
     return samples, sample_rate
 
 
+# ---------------------------------------------------------------------------
+# 23. bach_air_g_string.cpp — Baroque Polyphonic Suite
+# ---------------------------------------------------------------------------
+def synth_bach_air_g_string():
+    sample_rate = 10000
+    step_duration = 0.125 # 125 ms per step
+    samples_per_step = int(sample_rate * step_duration)
+
+    # 64-step Bach Air
+    melody = [
+        370, 370, 370, 370, 370, 370, 392, 440,
+        494, 494, 494, 440, 392, 370, 330, 277,
+        294, 294, 294, 330, 370, 392, 440, 494,
+        554, 554, 554, 494, 440, 415, 494, 415,
+        440, 440, 440, 440, 440, 440, 494, 554,
+        587, 587, 587, 587, 554, 554, 494, 494,
+        440, 440, 392, 392, 370, 370, 330, 330,
+        294, 294, 294, 294, 294, 294, 294, 294
+    ]
+    bass = [
+        147, 73, 139, 69, 123, 123, 110, 110,
+        98, 98, 92, 92, 82, 82, 110, 110,
+        73, 147, 139, 123, 110, 98, 92, 82,
+        92, 98, 104, 110, 110, 98, 92, 82,
+        110, 110, 98, 92, 82, 73, 69, 110,
+        147, 73, 139, 69, 123, 123, 110, 110,
+        98, 92, 82, 73, 110, 110, 110, 110,
+        73, 73, 110, 110, 73, 73, 73, 73
+    ]
+    arp = [
+        220, 294, 370, 294, 220, 277, 330, 277,
+        147, 196, 247, 196, 147, 185, 220, 165,
+        185, 220, 294, 220, 165, 220, 277, 185,
+        139, 165, 220, 165, 147, 208, 247, 208,
+        165, 220, 277, 220, 165, 220, 277, 220,
+        185, 220, 294, 220, 165, 196, 277, 196,
+        147, 196, 247, 196, 139, 165, 220, 165,
+        147, 185, 220, 185, 147, 185, 220, 294
+    ]
+
+    total_steps = len(melody)
+    total_samples = samples_per_step * total_steps
+    samples = bytearray(total_samples)
+
+    phase_bass = 0
+    phase_arp = 0
+    phase_lead = 0
+
+    cur_mel = 0
+    note_age = 0
+    sample_idx = 0
+
+    for step in range(total_steps):
+        mel_f = melody[step]
+        bass_f = bass[step]
+        arp_f = arp[step]
+
+        inc_bass = int(bass_f * (65536.0 / sample_rate))
+        inc_arp = int(arp_f * (65536.0 / sample_rate))
+        inc_lead = int(mel_f * (65536.0 / sample_rate))
+
+        if mel_f != cur_mel:
+            cur_mel = mel_f
+            note_age = 0
+
+        for _ in range(samples_per_step):
+            note_age += 1
+
+            # Bass: Warm Cello Triangle
+            phase_bass = (phase_bass + inc_bass) & 0xFFFF
+            tb = phase_bass >> 8
+            if tb > 127: tb = 255 - tb
+            s_bass = tb << 1
+
+            # Arp: Plucked Harpsichord (Saw + Pulse pluck)
+            phase_arp = (phase_arp + inc_arp) & 0xFFFF
+            saw = phase_arp >> 8
+            pluck = (saw >> 1) + (64 if (phase_arp & 0x4000) else 0)
+            env_arp = max(40, 220 - ((note_age % samples_per_step) * 180 // samples_per_step))
+            s_arp = (pluck * env_arp) >> 8
+
+            # Lead: Cantabile Violin with delayed vibrato
+            vib = 0
+            if note_age > 160: # ~16ms delay
+                vib = math.sin((sample_idx - 160) * 0.0035) * min(6.0, (note_age - 160) * 0.005)
+            phase_lead = (phase_lead + inc_lead + int(vib * 12)) & 0xFFFF
+            tl = phase_lead >> 8
+            if tl > 127: tl = 255 - tl
+            s_lead = tl << 1
+
+            mix = (s_bass * 80 + s_arp * 70 + s_lead * 120) >> 8
+            samples[sample_idx] = min(255, max(0, mix))
+            sample_idx += 1
+
+    return samples, sample_rate
+
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -1937,6 +2034,7 @@ def main():
         ("bytebeat_explorer", synth_bytebeat_explorer),
         ("bytebeat_techno", synth_bytebeat_techno),
         ("bytebeat_ambient", synth_bytebeat_ambient),
+        ("bach_air_g_string", synth_bach_air_g_string),
     ]
 
     for name, fn in synths:

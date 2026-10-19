@@ -33,6 +33,13 @@ def _run_cmd(cmd_list, cwd=None) -> int:
         return 127
 
 
+def _getopt(env, name, default=""):
+    v = env.GetProjectOption(f"custom_{name}")
+    if v is None:
+        v = env.GetProjectOption(name, default)
+    return v
+
+
 def post_action_hex_to_wav(target, source, env):
     # Source is the built .hex
     t0 = str(target[0]) if target else ""
@@ -49,16 +56,10 @@ def post_action_hex_to_wav(target, source, env):
     wav_path = os.path.join(build_dir, wav_name)
 
     # Read options from platformio.ini (prefer custom_ names to avoid warnings, fallback to legacy)
-    def _getopt(name, default):
-        v = env.GetProjectOption(f"custom_{name}")
-        if v is None:
-            v = env.GetProjectOption(name, default)
-        return v
-
-    hex2wav_cmd = (_getopt("hex2wav_cmd", "") or "").strip()
-    auto_play_opt = (_getopt("hex2wav_auto_play", "no") or "no").strip().lower()
+    hex2wav_cmd = (_getopt(env, "hex2wav_cmd", "") or "").strip()
+    auto_play_opt = (_getopt(env, "hex2wav_auto_play", "no") or "no").strip().lower()
     auto_play = auto_play_opt in ("1", "yes", "true", "on")
-    player_cmd = _getopt("hex2wav_player_cmd", "aplay -q {wav}")
+    player_cmd = _getopt(env, "hex2wav_player_cmd", "aplay -q {wav}")
 
     if not hex2wav_cmd:
         _log("No 'hex2wav_cmd' configured in platformio.ini -> skipping WAV generation.")
@@ -99,9 +100,10 @@ def run_hex2wav_alias(target, source, env):
     wav_path = env.subst("$BUILD_DIR/${PROGNAME}.wav")
 
     # Read options from platformio.ini
-    hex2wav_cmd = env.GetProjectOption("hex2wav_cmd", default="").strip()
-    auto_play = env.GetProjectOption("hex2wav_auto_play", default="no").strip().lower() in ("1", "yes", "true", "on")
-    player_cmd = env.GetProjectOption("hex2wav_player_cmd", default="aplay -q {wav}")
+    hex2wav_cmd = (_getopt(env, "hex2wav_cmd", "") or "").strip()
+    auto_play_opt = (_getopt(env, "hex2wav_auto_play", "no") or "no").strip().lower()
+    auto_play = auto_play_opt in ("1", "yes", "true", "on")
+    player_cmd = _getopt(env, "hex2wav_player_cmd", "aplay -q {wav}")
 
     if not hex2wav_cmd:
         _log("No 'hex2wav_cmd' configured in platformio.ini -> skipping WAV generation.")
