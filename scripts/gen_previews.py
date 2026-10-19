@@ -1231,6 +1231,38 @@ def schaltkreiskontrolle_frames():
 RENDERERS["schaltkreiskontrolle"] = schaltkreiskontrolle_frames
 
 
+# ---------------------------------------------------------------------------
+# 22. theremin.cpp — Léon Theremin 1920 Continuous Space Synth
+# ---------------------------------------------------------------------------
+def theremin_frames():
+    total_frames = 60
+    frames = []
+    for f in range(total_frames):
+        rows = []
+        phase_offset = f * 0.4
+        pitch_pos = int((math.sin(f * 0.1) * 0.5 + 0.5) * 4.9)
+        vol_height = int((math.cos(f * 0.15) * 0.5 + 0.5) * 3.9)
+        for y in range(MATRIX_H):
+            row = []
+            for x in range(MATRIX_W):
+                wave = math.sin(x * 1.5 + phase_offset)
+                beam_y = int(1.5 - wave * 1.2)
+                if y == beam_y:
+                    row.append((40, 255, 60))
+                elif abs(y - beam_y) == 1:
+                    row.append((10, 80, 20))
+                elif x == pitch_pos and y == (3 - vol_height):
+                    row.append((255, 255, 255))
+                else:
+                    glow = int((math.sin(x * 0.8 + y * 0.9 + f * 0.2) * 0.5 + 0.5) * 35)
+                    row.append((glow // 2, glow, glow * 2))
+            rows.append(row)
+        frames.append(render_frame(rows))
+    return frames, 50
+
+RENDERERS["theremin"] = theremin_frames
+
+
 if __name__ == "__main__":
     main()
 

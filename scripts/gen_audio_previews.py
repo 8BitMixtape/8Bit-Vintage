@@ -2042,6 +2042,57 @@ def synth_schaltkreiskontrolle():
     return samples, sample_rate
 
 
+# ---------------------------------------------------------------------------
+# 25. theremin.cpp — Léon Theremin 1920 Continuous Space Synth
+# ---------------------------------------------------------------------------
+def synth_theremin():
+    sample_rate = 10000
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    phase1 = 0.0
+    phase2 = 0.0
+    phase_vib = 0.0
+
+    for i in range(total_samples):
+        t = i / sample_rate
+
+        # 5.5 Hz natural finger vibrato
+        phase_vib += 5.5 * 2 * math.pi / sample_rate
+        vib = math.sin(phase_vib) * 0.02
+
+        if t < 2.5:
+            # Phase 1: Pure Clara Rockmore sine gliding upward (220 Hz to 660 Hz)
+            glide = (t / 2.5) ** 1.5
+            freq = (220.0 + glide * 440.0) * (1.0 + vib)
+            vol = min(1.0, t * 2.0)
+            phase1 += freq * 2 * math.pi / sample_rate
+            raw = math.sin(phase1)
+        elif t < 4.5:
+            # Phase 2: Sci-Fi Heterodyne UFO ring-mod wail (400 Hz to 850 Hz with dual osc)
+            t_sub = t - 2.5
+            freq1 = (440.0 + math.sin(t_sub * 4.0) * 200.0) * (1.0 + vib)
+            freq2 = freq1 * 1.35 + 25.0
+            vol = 0.9
+            phase1 += freq1 * 2 * math.pi / sample_rate
+            phase2 += freq2 * 2 * math.pi / sample_rate
+            raw = math.sin(phase1) * math.sin(phase2) * 1.5
+        else:
+            # Phase 3: Vocal / Cello descent with volume fade
+            t_sub = t - 4.5
+            freq = (550.0 - (t_sub / 1.5) * 350.0) * (1.0 + vib * 1.5)
+            vol = max(0.0, 1.0 - (t_sub / 1.5) ** 2)
+            phase1 += freq * 2 * math.pi / sample_rate
+            # Odd harmonic warmth
+            raw = (math.sin(phase1) * 0.7 + math.sin(phase1 * 3) * 0.3)
+
+        val = int(128 + raw * vol * 110)
+        samples[i] = min(255, max(0, val))
+
+    return samples, sample_rate
+
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -2069,6 +2120,7 @@ def main():
         ("bytebeat_ambient", synth_bytebeat_ambient),
         ("bach_air_g_string", synth_bach_air_g_string),
         ("schaltkreiskontrolle", synth_schaltkreiskontrolle),
+        ("theremin", synth_theremin),
     ]
 
     for name, fn in synths:

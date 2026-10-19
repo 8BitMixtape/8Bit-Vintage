@@ -433,5 +433,25 @@ window.APPS = [
     "manual": "SCHALTKREISKONTROLLE_MANUAL.md",
     "flash_bytes": 6976,
     "wav_bytes": 1491716
+  },
+  {
+    "id": "theremin",
+    "source": "theremin.cpp",
+    "title": "L\u00e9on Theremin 1920",
+    "tagline": "Continuous etherphone, space synth & EMF antenna visualizer",
+    "description": "A tribute to the world's first electronic instrument played without physical contact. Left pot controls continuous microtonal pitch (55 Hz to 2.1 kHz) with smooth portamento glide and organic 5.5 Hz finger vibrato. Right pot controls volume articulation from silence to soaring forte. Features 4 play modes (Glissando, Vocal Formant, Sci-Fi UFO, Quantized Harmonic Minor), 4 vintage timbres, and 4 reactive EMF matrix visualizers.",
+    "tags": [
+      "theremin",
+      "space-synth",
+      "etherphone",
+      "vibrato",
+      "portamento",
+      "sci-fi",
+      "continuous",
+      "glissando"
+    ],
+    "manual": "THEREMIN_MANUAL.md",
+    "flash_bytes": 4944,
+    "wav_bytes": 1080284
   }
 ];
