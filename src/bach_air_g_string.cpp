@@ -274,7 +274,10 @@ volatile uint8_t note_age    = 0;
 
 volatile uint8_t current_piece  = 0; // 0=Bach Air, 1=Pachelbel Canon, 2=Vivaldi Winter, 3=Beethoven Moonlight
 volatile uint8_t timbre_mode    = 0; // 0=Chamber Strings, 1=Cathedral Organ, 2=Glass Harmonica, 3=Switched-On Moog
-uint8_t visual_mode             = 0; // 0=Golden Candelabra, 1=Stained Glass, 2=Harp Strings, 3=Moonlight Serenade
+
+#define NUM_VISUAL_MODES 8
+uint8_t visual_mode             = 0; 
+uint8_t color_seed              = 42;
 
 volatile uint16_t ticks         = 0;
 volatile uint16_t step_ticks    = 1200; // Tempo tick count per step (~120ms default)
@@ -489,8 +492,13 @@ void loop() {
   uint16_t btn = analogRead(BUTTON_PIN);
   if (btn < Vbutton_releaseLevel) {
     if (btn < Vbutton_both) {
-      // Both Buttons: Cycle Visualizer Mode
-      visual_mode = (visual_mode + 1) & 3;
+      // Both Buttons: Manually pick a random visual mode
+      uint8_t next_v;
+      do {
+        next_v = ((uint8_t)ticks ^ (uint8_t)(ticks >> 2) ^ frame) % NUM_VISUAL_MODES;
+      } while (next_v == visual_mode);
+      visual_mode = next_v;
+      color_seed += 37;
     } else if (btn < Vbutton_right) {
       // Right Button: Cycle Instrument Timbre Mode
       timbre_mode = (timbre_mode + 1) & 3;
@@ -498,6 +506,14 @@ void loop() {
       // Left Button: Cycle Classical Piece / Movement
       current_piece = (current_piece + 1) & 3;
       current_step = 0; // Restart at beginning of piece
+
+      // Randomize visualizer mode and color seed EVERY time song changes!
+      uint8_t next_v;
+      do {
+        next_v = ((uint8_t)ticks ^ (uint8_t)(ticks >> 3) ^ frame) % NUM_VISUAL_MODES;
+      } while (next_v == visual_mode);
+      visual_mode = next_v;
+      color_seed = ((uint8_t)ticks * 17) ^ frame;
     }
     my_delay(260); // Clean hardware tick debounce
   }
@@ -506,20 +522,19 @@ void loop() {
   cli(); // Protect WS2812B 800kHz protocol timing
 
   if (visual_mode == 0) {
-    // Mode 0: Golden Baroque Candelabra & Warm Candlelight
-    // Warm golds, amber, and gentle dynamic glow
-    uint8_t flicker = (frame * 7 + current_step * 5) & 31;
-    uint32_t c_gold   = pixels.Color(255 - flicker, 175 - (flicker >> 1), 10);
-    uint32_t c_candle = pixels.Color(180, 70, 5);
-    uint32_t c_bg     = pixels.Color(12, 4, 1);
+    // Mode 0: Golden Baroque Candelabra & Warm Living Candlelight
+    uint8_t flicker = (frame * 9 + current_step * 7) & 31;
+    uint32_t c_gold   = pixels.Color(255 - flicker, 155 - (flicker >> 1), 8);
+    uint32_t c_candle = pixels.Color(160, 55, 3);
+    uint32_t c_hearth = pixels.Color(14, 3, 0);
 
-    matrixFill(c_bg);
-    // Draw 3 candelabra candles at cols 1, 2, 3
+    matrixFill(c_hearth);
+    // Draw 3 candelabra candles at columns 1, 2, 3
     for (uint8_t x = 1; x <= 3; x++) {
       matrixSet(x, 3, c_candle);
       matrixSet(x, 2, c_candle);
     }
-    // Animated flickering candle flame heights based on melody and arpeggio
+    // Animated dancing flames leaping dynamically with melody amplitude
     uint8_t flame_h = (env_lead >> 6) + 1;
     if (flame_h > 3) flame_h = 3;
     matrixSet(2, 3 - flame_h, c_gold);
@@ -528,18 +543,21 @@ void loop() {
 
   } else if (visual_mode == 1) {
     // Mode 1: Cathedral Stained Glass Rose Window
-    // Majestic jewel tones: sapphire, ruby, emerald, amethyst
+    // Symmetrical sacred geometry pulsating with chord progressions
     for (uint8_t y = 0; y < MATRIX_H; y++) {
       for (uint8_t x = 0; x < MATRIX_W; x++) {
-        uint8_t pattern = (x + y + (current_step >> 2)) & 3;
+        uint8_t pattern = (x + y + (current_step >> 2) + (color_seed & 3)) & 3;
         uint32_t glass_color;
         switch (pattern) {
-          case 0: glass_color = pixels.Color(0, 40, 220); break;   // Sapphire Blue
-          case 1: glass_color = pixels.Color(210, 10, 30); break;  // Ruby Red
-          case 2: glass_color = pixels.Color(10, 190, 60); break;  // Emerald Green
-          default: glass_color = pixels.Color(170, 20, 200); break;// Amethyst Purple
+          case 0: glass_color = pixels.Color(10, 50, 240); break;  // Sapphire Blue
+          case 1: glass_color = pixels.Color(220, 8, 25); break;   // Ruby Red
+          case 2: glass_color = pixels.Color(10, 185, 55); break;  // Emerald Green
+          default: glass_color = pixels.Color(160, 15, 210); break;// Imperial Amethyst
         }
-        // Pulse brightness with active voice dynamics
+        // Center cross is radiant gold
+        if ((x == 2 && (y == 1 || y == 2)) || (y == 1 && (x == 1 || x == 3))) {
+          glass_color = pixels.Color(255, 175, 15);
+        }
         uint8_t scale = 110 + (env_lead >> 2);
         matrixSet(x, y, dimColor(glass_color, scale));
       }
@@ -547,41 +565,106 @@ void loop() {
 
   } else if (visual_mode == 2) {
     // Mode 2: Polyphonic Counterpoint Harp Strings
-    // Col 0 = Basso Continuo, Cols 1-2 = Arpeggios, Cols 3-4 = Soaring Melody
-    matrixFill(pixels.Color(5, 5, 12));
+    // Visualizes all 3 voices independently in real-time
+    matrixFill(pixels.Color(4, 4, 10));
 
-    // Bass string (Warm Amber)
-    uint8_t b_height = (env_bass >> 6);
-    for (uint8_t y = 0; y <= b_height && y < MATRIX_H; y++) {
-      matrixSet(0, 3 - y, pixels.Color(240, 130, 20));
+    // Voice 1 (Bass Continuo): Deep amber / copper pillar (Column 0)
+    uint8_t b_h = (env_bass >> 6);
+    for (uint8_t y = 0; y <= b_h && y < MATRIX_H; y++) {
+      matrixSet(0, 3 - y, pixels.Color(240, 110, 15));
     }
 
-    // Arpeggio waves (Verdant Emerald & Jade)
+    // Voice 2 (Harmonic Arpeggio): Emerald & jade wave dancing across Cols 1 & 2
     uint8_t a_col = 1 + ((current_step >> 1) & 1);
-    uint8_t a_row = current_step % MATRIX_H;
-    matrixSet(a_col, a_row, pixels.Color(30, 220, 140));
+    uint8_t a_row = (current_step + (frame >> 2)) % MATRIX_H;
+    matrixSet(a_col, a_row, pixels.Color(25, 210, 120));
+    matrixSet(3 - a_col, 3 - a_row, pixels.Color(15, 120, 200));
 
-    // Soaring Cantabile Melody (Celestial Gold & Brilliant White)
+    // Voice 3 (Solo Cantabile): Brilliant gold & white soaring ribbon (Cols 3 & 4)
     uint8_t m_col = 3 + (current_step & 1);
-    uint8_t m_height = (env_lead >> 6);
-    for (uint8_t y = 0; y <= m_height && y < MATRIX_H; y++) {
-      matrixSet(m_col, 3 - y, pixels.Color(255, 230, 160));
+    uint8_t m_h = (env_lead >> 6);
+    for (uint8_t y = 0; y <= m_h && y < MATRIX_H; y++) {
+      matrixSet(m_col, 3 - y, pixels.Color(255, 220, 140));
+    }
+
+  } else if (visual_mode == 3) {
+    // Mode 3: Moonlight on Lake Lucerne (Beethoven Nocturne)
+    uint32_t water_deep = pixels.Color(2, 6, 32);
+    matrixFill(water_deep);
+
+    // Full silver moon centered at (2, 0)
+    matrixSet(2, 0, pixels.Color(235, 245, 255));
+    matrixSet(1, 0, pixels.Color(40, 90, 180));
+    matrixSet(3, 0, pixels.Color(40, 90, 180));
+
+    // Moonlight ripples shimmering across the lake water surface
+    uint8_t ripple_y = 1 + (frame % 3);
+    uint8_t ripple_x = (2 + (current_step & 1) - ((current_step >> 1) & 1)) % MATRIX_W;
+    matrixSet(ripple_x, ripple_y, pixels.Color(130, 215, 255));
+    matrixSet((ripple_x + 1) % MATRIX_W, ripple_y, pixels.Color(30, 80, 170));
+
+  } else if (visual_mode == 4) {
+    // Mode 4: Royal Velvet Tapestry & Imperial Gold Fleur-de-lis
+    matrixFill(pixels.Color(24, 2, 14));
+    uint8_t gold_pulse = 160 + (env_lead >> 2);
+    uint32_t royal_gold = pixels.Color(gold_pulse, (gold_pulse * 3) >> 2, 10);
+    // Classical diamond fleur-de-lis pattern
+    matrixSet(2, 0, royal_gold);
+    matrixSet(1, 1, royal_gold);
+    matrixSet(2, 1, royal_gold);
+    matrixSet(3, 1, royal_gold);
+    matrixSet(2, 2, royal_gold);
+    matrixSet(0, 3, royal_gold);
+    matrixSet(4, 3, royal_gold);
+
+  } else if (visual_mode == 5) {
+    // Mode 5: Celestial Starlight & Supernova Constellation
+    matrixFill(pixels.Color(3, 2, 16));
+    // Twinkling background stars
+    for (uint8_t i = 0; i < 4; i++) {
+      uint8_t sx = (frame * 3 + i * 2) % MATRIX_W;
+      uint8_t sy = (frame + i) % MATRIX_H;
+      matrixSet(sx, sy, pixels.Color(60, 110, 220));
+    }
+    // Brilliant supernova igniting on melodic note attacks
+    uint8_t star_x = (current_step * 3) % MATRIX_W;
+    uint8_t star_y = (current_step * 2) % MATRIX_H;
+    uint8_t burst = env_lead;
+    matrixSet(star_x, star_y, pixels.Color(burst, burst, (burst * 3) >> 2));
+
+  } else if (visual_mode == 6) {
+    // Mode 6: Baroque Kaleidoscope & Concentric Sacred Rings
+    for (uint8_t y = 0; y < MATRIX_H; y++) {
+      for (uint8_t x = 0; x < MATRIX_W; x++) {
+        int8_t dx = (int8_t)x - 2;
+        int8_t dy = (int8_t)y - 1;
+        uint8_t dist = (dx * dx + dy * dy * 2);
+        uint8_t phase = (dist + frame + (current_step >> 1)) & 7;
+        uint32_t col;
+        if (phase < 2) {
+          col = pixels.Color(255, 180, 20); // Gold ring
+        } else if (phase < 4) {
+          col = pixels.Color(10, 180, 160); // Turquoise ring
+        } else if (phase < 6) {
+          col = pixels.Color(190, 20, 170); // Violet ring
+        } else {
+          col = pixels.Color(10, 5, 30);
+        }
+        matrixSet(x, y, dimColor(col, 120 + (env_lead >> 2)));
+      }
     }
 
   } else {
-    // Mode 3: Moonlight Serenade (Deep Lake Azure & Silver Reflection)
-    uint32_t water_blue = pixels.Color(3, 15, 60);
-    matrixFill(water_blue);
-
-    // Moonlight reflection shifting gently across columns
-    uint8_t moon_x = 2;
-    matrixSet(moon_x, 0, pixels.Color(240, 250, 255)); // Full Moon
-
-    // Water ripple reflections responding to the arpeggio
-    uint8_t ripple_y = 1 + (frame % 3);
-    uint8_t ripple_x = (moon_x + (current_step & 1) - ((current_step >> 1) & 1)) % MATRIX_W;
-    matrixSet(ripple_x, ripple_y, pixels.Color(120, 200, 255));
-    matrixSet((ripple_x + 1) % MATRIX_W, ripple_y, pixels.Color(40, 90, 180));
+    // Mode 7: Prismatic Aurora Cantabile
+    for (uint8_t y = 0; y < MATRIX_H; y++) {
+      for (uint8_t x = 0; x < MATRIX_W; x++) {
+        uint8_t wave = (frame * 3 + x * 20 + y * 30 + current_step * 4) & 0xFF;
+        uint8_t r = (wave < 85) ? (wave * 3) : ((wave < 170) ? (255 - (wave - 85) * 3) : 0);
+        uint8_t g = (wave < 85) ? (255 - wave * 3) : ((wave < 170) ? 0 : ((wave - 170) * 3));
+        uint8_t b = (wave < 85) ? 0 : ((wave < 170) ? ((wave - 85) * 3) : (255 - (wave - 170) * 3));
+        matrixSet(x, y, pixels.Color(r >> 1, g >> 1, b >> 1));
+      }
+    }
   }
 
   pixels.show();

@@ -47,6 +47,7 @@ Cycle through 4 iconic classical movements using the left button:
 ### 🔘 Resistor Ladder Buttons (PB3 / A3)
 * **Left Button (Tap)**:
   - **Cycles Classical Movements**: Bach Air → Pachelbel Canon → Vivaldi Winter → Beethoven Moonlight.
+  - **Random Visual Mode Switch**: Every time the song changes, the visualizer automatically and randomly selects a completely new visual mode and color variation from the 8 modes below!
 * **Right Button (Tap)**:
   - **Cycles 4 Instrument Timbres**:
     1. **Baroque Chamber**: Singing violin solo, plucked harpsichord continuo, and warm cello bass.
@@ -54,11 +55,15 @@ Cycle through 4 iconic classical movements using the left button:
     3. **Glass Harmonica**: Pure crystalline flute with ring-modulated celestial chime shimmer.
     4. **"Switched-On" Moog**: Tribute to Wendy Carlos' 1968 *Switched-On Bach* with PWM brass and analog saw.
 * **Both Buttons (Hold/Tap)**:
-  - **Cycles 4 NeoPixel Visualizer Modes**:
-    1. **Golden Baroque Candelabra**: Warm gold and amber with flickering candlelight reacting to note dynamics.
-    2. **Cathedral Stained Glass**: Radiant sapphire blue, ruby red, emerald green, and amethyst rose window.
-    3. **Polyphonic Counterpoint Harp**: Real-time height columns for the 3 individual voices.
-    4. **Moonlight Serenade**: Deep midnight azure lake with silver ripples synchronized to tempo and arpeggio.
+  - **Manually Randomizes Visual Mode** across all 8 generative modes:
+    1. **Golden Baroque Candelabra**: Warm gold and living amber with dancing candlelight leaping to melody dynamics.
+    2. **Cathedral Stained Glass**: Radiant sapphire blue, ruby red, emerald green, and imperial amethyst rose window.
+    3. **Polyphonic Counterpoint Harp**: Real-time independent vertical spectrum ribbons for Bass, Arpeggio, and Melody.
+    4. **Moonlight on Lake Lucerne**: Deep midnight azure water with full silver moon and rippling water reflections.
+    5. **Royal Velvet Tapestry**: Royal crimson/burgundy velvet with ornate golden fleur-de-lis pulsating to continuo.
+    6. **Celestial Starlight & Supernova**: Twinkling deep space stars with brilliant supernova bursts igniting on melody notes.
+    7. **Baroque Kaleidoscope**: Concentric sacred geometry expanding and contracting in waves of gold, turquoise, and violet.
+    8. **Prismatic Aurora Cantabile**: Smooth flowing chromatic rainbow aurora ripples reacting directly to delayed vibrato.
 
 ---
 
