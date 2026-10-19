@@ -2009,6 +2009,39 @@ def synth_bach_air_g_string():
     return samples, sample_rate
 
 
+# ---------------------------------------------------------------------------
+# 24. schaltkreiskontrolle.cpp — Speech Chip "Schaltkreiskontrolle!"
+# ---------------------------------------------------------------------------
+def synth_schaltkreiskontrolle():
+    sample_rate = 10000
+    header = ROOT / "include" / "speech.h"
+    text = header.read_text()
+    body = text[text.find("{") + 1 : text.find("}")]
+    raw = [int(x.strip()) for x in body.split(",") if x.strip().isdigit()]
+
+    samples = bytearray()
+
+    def play_pass(speed_us, crush_bits):
+        step = (1000000.0 / speed_us) / sample_rate
+        pos = 0.0
+        while pos < len(raw):
+            idx = int(pos)
+            s = raw[idx]
+            if crush_bits > 0:
+                s = (s >> crush_bits) << crush_bits
+            samples.append(s)
+            pos += step
+
+    # Pass 1: Normal clean speech (delay ~290us)
+    play_pass(speed_us=290, crush_bits=0)
+    # 0.3s pause
+    samples.extend([128] * 3000)
+    # Pass 2: Pitch-shifted deep bitcrushed robotic voice
+    play_pass(speed_us=400, crush_bits=3)
+
+    return samples, sample_rate
+
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -2035,11 +2068,12 @@ def main():
         ("bytebeat_techno", synth_bytebeat_techno),
         ("bytebeat_ambient", synth_bytebeat_ambient),
         ("bach_air_g_string", synth_bach_air_g_string),
+        ("schaltkreiskontrolle", synth_schaltkreiskontrolle),
     ]
 
     for name, fn in synths:
         samples, rate = fn()
-        out = AUDIO_DIR / f"{name}.mp3"
+        out = (AUDIO_DIR / f"{name}.mp3").resolve()
         write_wav_to_mp3(samples, rate, out)
 
 if __name__ == "__main__":

@@ -412,5 +412,25 @@
     "manual": "BACH_AIR_G_STRING_MANUAL.md",
     "flash_bytes": 6186,
     "wav_bytes": 1332452
+  },
+  {
+    "id": "schaltkreiskontrolle",
+    "source": "schaltkreiskontrolle.cpp",
+    "title": "Schaltkreiskontrolle!",
+    "tagline": "Robotic speech chip, dynamic bitcrush & variable pitch",
+    "description": "The talking chip! Plays back a digitized robotic German voice saying 'Schaltkreiskontrolle!' (Circuit Control!). Left pot adjusts pitch/speed from deep monster to high chipmunk, right pot controls real-time bitcrush quantization. Features voice-amplitude VU flashes on the 5x4 LED matrix.",
+    "tags": [
+      "speech",
+      "voice",
+      "talking-chip",
+      "bitcrush",
+      "sampler",
+      "german",
+      "kraftwerk",
+      "lo-fi"
+    ],
+    "manual": "SCHALTKREISKONTROLLE_MANUAL.md",
+    "flash_bytes": 6976,
+    "wav_bytes": 1491716
   }
 ]

@@ -1191,6 +1191,46 @@ def bach_air_frames():
 RENDERERS["bach_air_g_string"] = bach_air_frames
 
 
+# ---------------------------------------------------------------------------
+# 24. schaltkreiskontrolle.cpp — Speech Amplitude Flash & Cyber Indicator
+# ---------------------------------------------------------------------------
+def schaltkreiskontrolle_frames():
+    frames = []
+    total_frames = 48
+    for f in range(total_frames):
+        rows = []
+        if f < 30:
+            # Speaking phase: Red amplitude flash
+            amp = int(abs(math.sin(f * 0.45) * math.cos(f * 0.9)) * 255)
+            ind_y = (f // 8) % 4
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if x == 4:
+                        row.append((255, 255, 255) if y == ind_y else (25, 0, 0))
+                    else:
+                        row.append((amp, 0, 0))
+                rows.append(row)
+        else:
+            # Idle phase: Breathing RGB glow
+            val = int(abs(math.sin(f * 0.2)) * 110 + 15)
+            r = (200 * val) >> 7
+            g = (120 * val) >> 7
+            b = (240 * val) >> 7
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if x == 4:
+                        row.append((255, 255, 255) if y == 2 else (20, 0, 0))
+                    else:
+                        row.append((r, g, b))
+                rows.append(row)
+        frames.append(render_frame(rows))
+    return frames, 60
+
+RENDERERS["schaltkreiskontrolle"] = schaltkreiskontrolle_frames
+
+
 if __name__ == "__main__":
     main()
 
