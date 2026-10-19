@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------------------
-    J.S. BACH: AIR ON THE G STRING & CLASSICAL BAROQUE SUITE
+    J.S. BACH: AIR ON THE G STRING & CLASSICAL BAROQUE SUITE (OPTIMIZED EDITION)
     For ATtiny85 / 8Bit Mixtape (AudioBoot)
     
     A 3-voice polyphonic classical synthesizer engine featuring:
@@ -8,22 +8,19 @@
       - Movement 2: Antonio Vivaldi — Winter (L'Inverno - Largo)
       - Movement 3: Ludwig van Beethoven — Moonlight Sonata (Adagio sostenuto)
 
-    Sound Engine:
-      - Voice 1 (Bass): Basso Continuo / Cello pedal drone with warm sub-harmonics
-      - Voice 2 (Arp): Baroque Continuo / Plucked Harpsichord / Organ Flute
-      - Voice 3 (Lead): Cantabile Soloist with delayed expressive classical vibrato
-      - 4 Instrument Timbres: Baroque Chamber, Cathedral Organ, Glass Harmonica, Switched-On Moog
-      - 4 NeoPixel Visualizer Modes on 5x4 Matrix (Golden Candelabra, Stained Glass, Polyphonic Harp, Moonlight Serenade)
+    Visuals:
+      - 6 Generative Classical Visualizers on 5x4 NeoPixel Matrix
+      - Automatic random visual mode change every time a new song is selected!
 
     Hardware Mapping:
       PB0: 20x NeoPixels (5x4 Matrix)
       PB1: 8-bit Audio PWM (OC1A Timer1 64MHz PLL @ 250kHz carrier)
       PB4 (A2): Left Pot (Tempo & Agogic Timing: 70ms - 220ms per step)
-      PB2 (A1): Right Pot (Acoustic Reverb Tail & Harmony / Continuous Balance)
+      PB2 (A1): Right Pot (Acoustic Reverb Tail & Sub-Bass Depth)
       PB3 (A3): Resistor Ladder Buttons
-                - Short Press Left:  Cycle Classical Piece / Movement
-                - Short Press Right: Cycle Instrument Timbre
-                - Both Buttons:      Cycle NeoPixel Visualizer Theme
+                - Left Button:  Cycle Classical Piece / Movement (Changes visual randomly!)
+                - Right Button: Cycle Instrument Timbre (Chamber, Organ, Glass, Moog)
+                - Both Buttons: Cycle / Randomize Visualizer Mode manually
  --------------------------------------------------------------------------------------- */
 
 #include <Arduino.h>
@@ -41,7 +38,7 @@
 #define POTI_LEFT   A2 // PB4 (ADC2)
 #define POTI_RIGHT  A1 // PB2 (ADC1)
 
-// Button Voltage Ladder Calibration
+// Button Calibration
 #define Vbutton_releaseLevel  490
 #define Vbutton_left          460
 #define Vbutton_right         395
@@ -49,90 +46,88 @@
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEOPIXELPIN, NEO_GRB + NEO_KHZ800);
 
-// --- Note Frequencies (10kHz sample rate: inc = f_Hz * 65536 / 10000) ---
-#define N_REST 0
+// Compact Note Indices (1-byte per note to keep Flash comfortably below 6KB!)
+enum NoteName : uint8_t {
+  N_REST = 0,
+  N_C2, N_Cs2, N_D2, N_Ds2, N_E2, N_F2, N_Fs2, N_G2, N_Gs2, N_A2, N_Bb2, N_B2,
+  N_C3, N_Cs3, N_D3, N_Ds3, N_E3, N_F3, N_Fs3, N_G3, N_Gs3, N_A3, N_Bb3, N_B3,
+  N_C4, N_Cs4, N_D4, N_Ds4, N_E4, N_F4, N_Fs4, N_G4, N_Gs4, N_A4, N_Bb4, N_B4,
+  N_C5, N_Cs5, N_D5, N_Ds5, N_E5, N_F5, N_Fs5, N_G5, N_A5
+};
 
-// Octave 1 & 2 (Bass Continuo)
-#define N_C2   429
-#define N_Cs2  454
-#define N_D2   481
-#define N_Eb2  510
-#define N_Ds2  510
-#define N_E2   540
-#define N_F2   572
-#define N_Fs2  606
-#define N_G2   642
-#define N_Gs2  680
-#define N_A2   721
-#define N_Bb2  764
-#define N_B2   809
+// 10kHz Phase Increments Table (inc = f_Hz * 65536 / 10000)
+const uint16_t note_freqs[] PROGMEM = {
+  0,    // REST
+  429,  // C2
+  454,  // Cs2
+  481,  // D2
+  510,  // Ds2 / Eb2
+  540,  // E2
+  572,  // F2
+  606,  // Fs2
+  642,  // G2
+  680,  // Gs2
+  721,  // A2
+  764,  // Bb2
+  809,  // B2
 
-// Octave 3 (Tenor / Inner Voice)
-#define N_C3   857
-#define N_Cs3  908
-#define N_D3   962
-#define N_Eb3  1020
-#define N_Ds3  1020
-#define N_E3   1080
-#define N_F3   1144
-#define N_Fs3  1212
-#define N_G3   1285
-#define N_Gs3  1361
-#define N_A3   1442
-#define N_Bb3  1528
-#define N_B3   1618
+  857,  // C3
+  908,  // Cs3
+  962,  // D3
+  1020, // Ds3 / Eb3
+  1080, // E3
+  1144, // F3
+  1212, // Fs3
+  1285, // G3
+  1361, // Gs3
+  1442, // A3
+  1528, // Bb3
+  1618, // B3
 
-// Octave 4 (Soprano / Melody)
-#define N_C4   1715
-#define N_Cs4  1817
-#define N_D4   1925
-#define N_Eb4  2039
-#define N_Ds4  2039
-#define N_E4   2160
-#define N_F4   2289
-#define N_Fs4  2425
-#define N_G4   2569
-#define N_Gs4  2722
-#define N_A4   2884
-#define N_Bb4  3055
-#define N_B4   3237
+  1715, // C4
+  1817, // Cs4
+  1925, // D4
+  2039, // Ds4 / Eb4
+  2160, // E4
+  2289, // F4
+  2425, // Fs4
+  2569, // G4
+  2722, // Gs4
+  2884, // A4
+  3055, // Bb4
+  3237, // B4
 
-// Octave 5 (High Cantabile)
-#define N_C5   3429
-#define N_Cs5  3633
-#define N_D5   3849
-#define N_Eb5  4078
-#define N_Ds5  4078
-#define N_E5   4321
-#define N_F5   4577
-#define N_Fs5  4850
-#define N_G5   5138
-#define N_A5   5767
+  3429, // C5
+  3633, // Cs5
+  3849, // D5
+  4078, // Ds5 / Eb5
+  4321, // E5
+  4577, // F5
+  4850, // Fs5
+  5138, // G5
+  5767  // A5
+};
 
-// --- 64-step Musical Scores in Flash (PROGMEM) ---
+static inline uint16_t get_note_inc(uint8_t idx) {
+  if (idx >= sizeof(note_freqs)/sizeof(note_freqs[0])) return 0;
+  return pgm_read_word(&note_freqs[idx]);
+}
+
+// --- 64-step Musical Scores in Flash (Compact 1-byte per note!) ---
 
 // --- Movement 0: J.S. Bach — Air on the G String (BWV 1068) ---
-const uint16_t bach_melody[64] PROGMEM = {
-  // M1: F#4 held, then G4, A4
+const uint8_t bach_melody[64] PROGMEM = {
   N_Fs4, N_Fs4, N_Fs4, N_Fs4, N_Fs4, N_Fs4, N_G4,  N_A4,
-  // M2: B4 held, then A4, G4, F#4, E4, C#4
   N_B4,  N_B4,  N_B4,  N_A4,  N_G4,  N_Fs4, N_E4,  N_Cs4,
-  // M3: D4 held, then E4, F#4, G4, A4, B4
   N_D4,  N_D4,  N_D4,  N_E4,  N_Fs4, N_G4,  N_A4,  N_B4,
-  // M4: C#5 held, then B4, A4, G#4, B4, G#4
   N_Cs5, N_Cs5, N_Cs5, N_B4,  N_A4,  N_Gs4, N_B4,  N_Gs4,
-  // M5: A4 held, then B4, C#5
   N_A4,  N_A4,  N_A4,  N_A4,  N_A4,  N_A4,  N_B4,  N_Cs5,
-  // M6: D5 held, C#5, B4
   N_D5,  N_D5,  N_D5,  N_D5,  N_Cs5, N_Cs5, N_B4,  N_B4,
-  // M7: A4, G4, F#4, E4
   N_A4,  N_A4,  N_G4,  N_G4,  N_Fs4, N_Fs4, N_E4,  N_E4,
-  // M8: Cadence in D Major
   N_D4,  N_D4,  N_D4,  N_D4,  N_D4,  N_D4,  N_D4,  N_D4
 };
 
-const uint16_t bach_bass[64] PROGMEM = {
-  // Iconic walking bass with octave drop
+const uint8_t bach_bass[64] PROGMEM = {
   N_D3,  N_D2,  N_Cs3, N_Cs2, N_B2,  N_B2,  N_A2,  N_A2,
   N_G2,  N_G2,  N_Fs2, N_Fs2, N_E2,  N_E2,  N_A2,  N_A2,
   N_D2,  N_D3,  N_Cs3, N_B2,  N_A2,  N_G2,  N_Fs2, N_E2,
@@ -143,7 +138,7 @@ const uint16_t bach_bass[64] PROGMEM = {
   N_D2,  N_D2,  N_A2,  N_A2,  N_D2,  N_D2,  N_D2,  N_D2
 };
 
-const uint16_t bach_arp[64] PROGMEM = {
+const uint8_t bach_arp[64] PROGMEM = {
   N_A3,  N_D4,  N_Fs4, N_D4,  N_A3,  N_Cs4, N_E4,  N_Cs4,
   N_D3,  N_G3,  N_B3,  N_G3,  N_D3,  N_Fs3, N_A3,  N_E3,
   N_Fs3, N_A3,  N_D4,  N_A3,  N_E3,  N_A3,  N_Cs4, N_Fs3,
@@ -155,21 +150,18 @@ const uint16_t bach_arp[64] PROGMEM = {
 };
 
 // --- Movement 1: Johann Pachelbel — Canon in D Major ---
-const uint16_t pachelbel_melody[64] PROGMEM = {
-  // Theme A: Serene hymn
+const uint8_t pachelbel_melody[64] PROGMEM = {
   N_Fs4, N_Fs4, N_Fs4, N_Fs4, N_E4,  N_E4,  N_E4,  N_E4,
   N_D4,  N_D4,  N_D4,  N_D4,  N_Cs4, N_Cs4, N_Cs4, N_Cs4,
   N_B3,  N_B3,  N_B3,  N_B3,  N_A3,  N_A3,  N_A3,  N_A3,
   N_B3,  N_B3,  N_B3,  N_B3,  N_Cs4, N_Cs4, N_Cs4, N_Cs4,
-  // Theme B: Dancing quarter variations
   N_D4,  N_D4,  N_Fs4, N_Fs4, N_A4,  N_A4,  N_G4,  N_G4,
   N_Fs4, N_Fs4, N_D4,  N_D4,  N_Fs4, N_Fs4, N_E4,  N_E4,
   N_D4,  N_D4,  N_B3,  N_B3,  N_D4,  N_D4,  N_A3,  N_A3,
   N_G3,  N_G3,  N_B3,  N_B3,  N_A3,  N_A3,  N_G3,  N_G3
 };
 
-const uint16_t pachelbel_bass[64] PROGMEM = {
-  // Pachelbel 8-chord ground bass (repeated twice)
+const uint8_t pachelbel_bass[64] PROGMEM = {
   N_D3,  N_D2,  N_A2,  N_A2,  N_B2,  N_B2,  N_Fs2, N_Fs2,
   N_G2,  N_G2,  N_D2,  N_D2,  N_G2,  N_G2,  N_A2,  N_A2,
   N_D3,  N_D2,  N_A2,  N_A2,  N_B2,  N_B2,  N_Fs2, N_Fs2,
@@ -180,7 +172,7 @@ const uint16_t pachelbel_bass[64] PROGMEM = {
   N_G2,  N_G2,  N_D2,  N_D2,  N_G2,  N_G2,  N_A2,  N_A2
 };
 
-const uint16_t pachelbel_arp[64] PROGMEM = {
+const uint8_t pachelbel_arp[64] PROGMEM = {
   N_D4,  N_Fs4, N_A4,  N_Fs4, N_Cs4, N_E4,  N_A4,  N_E4,
   N_B3,  N_D4,  N_Fs4, N_D4,  N_A3,  N_Cs4, N_Fs4, N_Cs4,
   N_G3,  N_B3,  N_D4,  N_B3,  N_Fs3, N_A3,  N_D4,  N_A3,
@@ -192,7 +184,7 @@ const uint16_t pachelbel_arp[64] PROGMEM = {
 };
 
 // --- Movement 2: Antonio Vivaldi — Winter (Largo) ---
-const uint16_t vivaldi_melody[64] PROGMEM = {
+const uint8_t vivaldi_melody[64] PROGMEM = {
   N_Fs4, N_Fs4, N_Fs4, N_G4,  N_A4,  N_A4,  N_A4,  N_A4,
   N_D5,  N_D5,  N_D5,  N_D5,  N_Cs5, N_Cs5, N_B4,  N_B4,
   N_A4,  N_A4,  N_A4,  N_A4,  N_B4,  N_A4,  N_G4,  N_Fs4,
@@ -203,7 +195,7 @@ const uint16_t vivaldi_melody[64] PROGMEM = {
   N_Fs4, N_Fs4, N_E4,  N_E4,  N_D4,  N_D4,  N_D4,  N_D4
 };
 
-const uint16_t vivaldi_bass[64] PROGMEM = {
+const uint8_t vivaldi_bass[64] PROGMEM = {
   N_D2,  N_D2,  N_Fs2, N_Fs2, N_G2,  N_G2,  N_A2,  N_A2,
   N_D2,  N_D2,  N_B2,  N_B2,  N_E2,  N_E2,  N_A2,  N_A2,
   N_D2,  N_D2,  N_Fs2, N_Fs2, N_G2,  N_G2,  N_A2,  N_A2,
@@ -214,7 +206,7 @@ const uint16_t vivaldi_bass[64] PROGMEM = {
   N_D2,  N_D2,  N_B2,  N_B2,  N_E2,  N_E2,  N_D2,  N_D2
 };
 
-const uint16_t vivaldi_arp[64] PROGMEM = {
+const uint8_t vivaldi_arp[64] PROGMEM = {
   N_Fs3, N_A3,  N_Fs3, N_A3,  N_A3,  N_D4,  N_A3,  N_D4,
   N_B3,  N_D4,  N_B3,  N_D4,  N_Cs4, N_E4,  N_Cs4, N_E4,
   N_Fs3, N_A3,  N_Fs3, N_A3,  N_G3,  N_B3,  N_G3,  N_B3,
@@ -226,7 +218,7 @@ const uint16_t vivaldi_arp[64] PROGMEM = {
 };
 
 // --- Movement 3: Ludwig van Beethoven — Moonlight Sonata (Adagio) ---
-const uint16_t moonlight_melody[64] PROGMEM = {
+const uint8_t moonlight_melody[64] PROGMEM = {
   N_REST, N_REST, N_REST, N_REST, N_REST, N_REST, N_REST, N_REST,
   N_REST, N_REST, N_REST, N_REST, N_REST, N_REST, N_REST, N_REST,
   N_Gs3,  N_Gs3,  N_Gs3,  N_Gs3,  N_Gs3,  N_Gs3,  N_Gs3,  N_Gs3,
@@ -237,7 +229,7 @@ const uint16_t moonlight_melody[64] PROGMEM = {
   N_Cs3,  N_Cs3,  N_Cs3,  N_Cs3,  N_Cs3,  N_Cs3,  N_Cs3,  N_Cs3
 };
 
-const uint16_t moonlight_bass[64] PROGMEM = {
+const uint8_t moonlight_bass[64] PROGMEM = {
   N_Cs2, N_Cs2, N_Cs2, N_Cs2, N_B2,  N_B2,  N_B2,  N_B2,
   N_A2,  N_A2,  N_A2,  N_A2,  N_Gs2, N_Gs2, N_Gs2, N_Gs2,
   N_Cs2, N_Cs2, N_Cs2, N_Cs2, N_B2,  N_B2,  N_B2,  N_B2,
@@ -248,7 +240,7 @@ const uint16_t moonlight_bass[64] PROGMEM = {
   N_Cs2, N_Cs2, N_Cs2, N_Cs2, N_Cs2, N_Cs2, N_Cs2, N_Cs2
 };
 
-const uint16_t moonlight_arp[64] PROGMEM = {
+const uint8_t moonlight_arp[64] PROGMEM = {
   N_Gs3, N_Cs4, N_E4,  N_Cs4, N_Gs3, N_Cs4, N_E4,  N_Cs4,
   N_Gs3, N_Cs4, N_E4,  N_Cs4, N_Gs3, N_Cs4, N_E4,  N_Cs4,
   N_A3,  N_Cs4, N_E4,  N_Cs4, N_A3,  N_D4,  N_Fs4, N_D4,
@@ -259,13 +251,13 @@ const uint16_t moonlight_arp[64] PROGMEM = {
   N_Gs3, N_Cs4, N_E4,  N_Cs4, N_Gs3, N_Cs4, N_E4,  N_Cs4
 };
 
-// --- Audio Engine State Variables ---
+// Audio Engine State Variables
 volatile uint16_t phase_bass = 0;
-volatile uint16_t inc_bass   = N_D2;
+volatile uint16_t inc_bass   = 481;
 volatile uint16_t phase_arp  = 0;
-volatile uint16_t inc_arp    = N_A3;
+volatile uint16_t inc_arp    = 1442;
 volatile uint16_t phase_lead = 0;
-volatile uint16_t inc_lead   = N_Fs4;
+volatile uint16_t inc_lead   = 2425;
 
 volatile uint8_t env_lead    = 240;
 volatile uint8_t env_arp     = 180;
@@ -275,9 +267,8 @@ volatile uint8_t note_age    = 0;
 volatile uint8_t current_piece  = 0; // 0=Bach Air, 1=Pachelbel Canon, 2=Vivaldi Winter, 3=Beethoven Moonlight
 volatile uint8_t timbre_mode    = 0; // 0=Chamber Strings, 1=Cathedral Organ, 2=Glass Harmonica, 3=Switched-On Moog
 
-#define NUM_VISUAL_MODES 8
+#define NUM_VISUAL_MODES 6
 uint8_t visual_mode             = 0; 
-uint8_t color_seed              = 42;
 
 volatile uint16_t ticks         = 0;
 volatile uint16_t step_ticks    = 1200; // Tempo tick count per step (~120ms default)
@@ -303,128 +294,111 @@ void my_delay(uint16_t ms) {
 ISR(TIMER0_COMPA_vect) {
   ticks++;
 
-  // --- Real-time Hardware Sequencer ---
   static uint16_t tick_acc = 0;
-  static uint16_t last_lead_note = 0;
+  static uint8_t last_lead_note = 255;
 
   tick_acc++;
   if (tick_acc >= step_ticks) {
     tick_acc = 0;
-    current_step = (current_step + 1) & 63; // Clean 64-step loop
+    current_step = (current_step + 1) & 63; // 64-step loop
 
-    // Read notes from active movement in Flash
-    uint16_t n_lead = 0;
-    uint16_t n_bass = 0;
-    uint16_t n_arp  = 0;
+    uint8_t n_lead_idx = 0;
+    uint8_t n_bass_idx = 0;
+    uint8_t n_arp_idx  = 0;
 
     switch (current_piece) {
-      case 0: // Bach Air
-        n_lead = pgm_read_word(&bach_melody[current_step]);
-        n_bass = pgm_read_word(&bach_bass[current_step]);
-        n_arp  = pgm_read_word(&bach_arp[current_step]);
+      case 0:
+        n_lead_idx = pgm_read_byte(&bach_melody[current_step]);
+        n_bass_idx = pgm_read_byte(&bach_bass[current_step]);
+        n_arp_idx  = pgm_read_byte(&bach_arp[current_step]);
         break;
-      case 1: // Pachelbel Canon
-        n_lead = pgm_read_word(&pachelbel_melody[current_step]);
-        n_bass = pgm_read_word(&pachelbel_bass[current_step]);
-        n_arp  = pgm_read_word(&pachelbel_arp[current_step]);
+      case 1:
+        n_lead_idx = pgm_read_byte(&pachelbel_melody[current_step]);
+        n_bass_idx = pgm_read_byte(&pachelbel_bass[current_step]);
+        n_arp_idx  = pgm_read_byte(&pachelbel_arp[current_step]);
         break;
-      case 2: // Vivaldi Winter
-        n_lead = pgm_read_word(&vivaldi_melody[current_step]);
-        n_bass = pgm_read_word(&vivaldi_bass[current_step]);
-        n_arp  = pgm_read_word(&vivaldi_arp[current_step]);
+      case 2:
+        n_lead_idx = pgm_read_byte(&vivaldi_melody[current_step]);
+        n_bass_idx = pgm_read_byte(&vivaldi_bass[current_step]);
+        n_arp_idx  = pgm_read_byte(&vivaldi_arp[current_step]);
         break;
-      default: // Beethoven Moonlight
-        n_lead = pgm_read_word(&moonlight_melody[current_step]);
-        n_bass = pgm_read_word(&moonlight_bass[current_step]);
-        n_arp  = pgm_read_word(&moonlight_arp[current_step]);
+      default:
+        n_lead_idx = pgm_read_byte(&moonlight_melody[current_step]);
+        n_bass_idx = pgm_read_byte(&moonlight_bass[current_step]);
+        n_arp_idx  = pgm_read_byte(&moonlight_arp[current_step]);
         break;
     }
 
-    // Lead voice articulation & legato check
-    if (n_lead != last_lead_note) {
-      inc_lead = n_lead;
-      last_lead_note = n_lead;
-      env_lead = (n_lead == N_REST) ? 0 : 250;
+    if (n_lead_idx != last_lead_note) {
+      inc_lead = get_note_inc(n_lead_idx);
+      last_lead_note = n_lead_idx;
+      env_lead = (n_lead_idx == N_REST) ? 0 : 250;
       note_age = 0;
     }
 
-    // Arpeggio / Continuo pluck trigger
-    inc_arp = n_arp;
-    env_arp = 220;
+    inc_arp  = get_note_inc(n_arp_idx);
+    env_arp  = 220;
 
-    // Bass note step
-    inc_bass = n_bass;
+    inc_bass = get_note_inc(n_bass_idx);
     env_bass = 210;
   }
 
   // Envelope decay & articulation
   if ((ticks & 15) == 0) {
     if (note_age < 255) note_age++;
-    // Subtle decay on lead
     if (env_lead > 130) env_lead -= 1;
-    // Faster decay on plucked harpsichord arpeggio
     if (env_arp > 40) env_arp -= (timbre_mode == 0) ? 4 : 2;
-    // Warm cello bass decay
     if (env_bass > 100) env_bass -= 1;
   }
 
-  // --- Voice 1: Basso Continuo (Cello / Violone) ---
+  // Voice 1: Basso Continuo (Cello)
   phase_bass += inc_bass;
   uint8_t tb = (phase_bass >> 8);
-  if (tb > 127) tb = 255 - tb; // Triangle (0..127)
-  // Sub-octave harmonic warmth
+  if (tb > 127) tb = 255 - tb;
   uint8_t sub = (phase_bass >> 9);
   if (sub > 127) sub = 255 - sub;
-  uint8_t raw_bass = (tb + (sub >> 1));
+  uint8_t raw_bass = tb + (sub >> 1);
   uint8_t s_bass = ((uint16_t)raw_bass * env_bass) >> 8;
   s_bass = ((uint16_t)s_bass * sub_bass_depth) >> 8;
 
-  // --- Voice 2: Arpeggiated Continuo / Inner Voice ---
+  // Voice 2: Arpeggiated Continuo / Harpsichord
   phase_arp += inc_arp;
   uint8_t s_arp = 0;
   if (timbre_mode == 0) {
-    // Harpsichord / Lute: bright plucked attack
     uint8_t saw = phase_arp >> 8;
     uint8_t pluck = (saw >> 1) + ((phase_arp & 0x4000) ? 64 : 0);
     s_arp = ((uint16_t)pluck * env_arp) >> 8;
   } else if (timbre_mode == 1) {
-    // Pipe Organ Flute: soft rounded triangle
     uint8_t ta = (phase_arp >> 8);
     if (ta > 127) ta = 255 - ta;
     s_arp = ((uint16_t)(ta << 1) * env_arp) >> 8;
   } else if (timbre_mode == 2) {
-    // Glass Harmonica / Music Box: celestial crystalline shimmer
     uint8_t ta = (phase_arp >> 8);
     if (ta > 127) ta = 255 - ta;
     uint8_t shimmer = (phase_arp >> 7);
     s_arp = ((uint16_t)(ta ^ (shimmer & 0x1F)) * env_arp) >> 8;
   } else {
-    // Switched-On Moog: resonant saw
     uint8_t saw = phase_arp >> 8;
     s_arp = ((uint16_t)saw * env_arp) >> 8;
   }
 
-  // --- Voice 3: Solo Cantabile (Violin / Solo Organ / Flute) ---
-  // Delayed Classical Vibrato: swells gracefully after note onset
+  // Voice 3: Solo Cantabile (Violin with delayed vibrato)
   int8_t vib = 0;
   if (note_age > 16) {
     uint8_t vib_step = (ticks >> 4) & 31;
     int8_t vib_shape = (vib_step < 16) ? (vib_step - 8) : (24 - vib_step);
-    // Vibrato depth swells naturally with note duration
     uint8_t v_depth = (note_age > 60) ? 8 : 4;
     vib = (vib_shape * v_depth) >> 3;
   }
   phase_lead += (inc_lead + vib);
 
   uint8_t s_lead = 0;
-  if (inc_lead != N_REST) {
+  if (inc_lead != 0) {
     if (timbre_mode == 0) {
-      // Baroque Cantabile Violin: smooth triangle with singing tone
       uint8_t tl = (phase_lead >> 8);
       if (tl > 127) tl = 255 - tl;
       s_lead = ((uint16_t)(tl << 1) * env_lead) >> 8;
     } else if (timbre_mode == 1) {
-      // Cathedral Organ Principal (8' + 4' dual stop)
       uint8_t tl1 = (phase_lead >> 8);
       if (tl1 > 127) tl1 = 255 - tl1;
       uint8_t tl2 = (phase_lead >> 7);
@@ -432,19 +406,17 @@ ISR(TIMER0_COMPA_vect) {
       uint8_t organ = (tl1 * 3 + tl2) >> 2;
       s_lead = ((uint16_t)(organ << 1) * env_lead) >> 8;
     } else if (timbre_mode == 2) {
-      // Glass Harmonica: pure crystalline flute
       uint8_t tl = (phase_lead >> 8);
       if (tl > 127) tl = 255 - tl;
       s_lead = ((uint16_t)(tl << 1) * env_lead) >> 8;
     } else {
-      // Switched-On Moog: PWM Brass
       static uint8_t pwm_width = 128;
       uint8_t pulse = ((phase_lead >> 8) > pwm_width) ? 220 : 35;
       s_lead = ((uint16_t)pulse * env_lead) >> 8;
     }
   }
 
-  // --- 3-Voice Polyphonic Master Mix with Reverb Headroom ---
+  // Master mix
   uint16_t mix = ((uint16_t)s_bass * 160) >> 8;
   mix += ((uint16_t)s_arp * (140 + (reverb_tail >> 2))) >> 8;
   mix += ((uint16_t)s_lead * 240) >> 8;
@@ -455,7 +427,9 @@ ISR(TIMER0_COMPA_vect) {
 
 void setup() {
   pixels.begin();
-  pixels.setBrightness(110);
+  pixels.setBrightness(140); // Bright & vibrant on hardware NeoPixels!
+  pixels.clear();
+  pixels.show();
 
   #if defined (__AVR_ATtiny85__)
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
@@ -477,64 +451,68 @@ void setup() {
 
 void loop() {
   static uint8_t frame = 0;
+  static uint8_t last_btn_state = 0;
 
   // Read Potentiometers
   uint16_t p_tempo  = analogRead(POTI_LEFT);  // PB4: Tempo / Rubato
   uint16_t p_reverb = analogRead(POTI_RIGHT); // PB2: Reverb Tail & Sub Depth
 
-  // Update real-time musical parameters
-  // Map step_ticks: 700 (70ms = lively allegro) to 2200 (220ms = majestic largo)
   step_ticks = map(p_tempo, 0, 1023, 700, 2200);
   reverb_tail = map(p_reverb, 0, 1023, 40, 240);
   sub_bass_depth = map(p_reverb, 0, 1023, 110, 250);
 
-  // Read Navigation Buttons
+  // Read Navigation Buttons with robust Edge Detection
   uint16_t btn = analogRead(BUTTON_PIN);
-  if (btn < Vbutton_releaseLevel) {
-    if (btn < Vbutton_both) {
-      // Both Buttons: Manually pick a random visual mode
-      uint8_t next_v;
-      do {
-        next_v = ((uint8_t)ticks ^ (uint8_t)(ticks >> 2) ^ frame) % NUM_VISUAL_MODES;
-      } while (next_v == visual_mode);
-      visual_mode = next_v;
-      color_seed += 37;
-    } else if (btn < Vbutton_right) {
-      // Right Button: Cycle Instrument Timbre Mode
-      timbre_mode = (timbre_mode + 1) & 3;
-    } else if (btn < Vbutton_left) {
-      // Left Button: Cycle Classical Piece / Movement
-      current_piece = (current_piece + 1) & 3;
-      current_step = 0; // Restart at beginning of piece
+  uint8_t curr_btn_state = 0;
 
-      // Randomize visualizer mode and color seed EVERY time song changes!
-      uint8_t next_v;
-      do {
-        next_v = ((uint8_t)ticks ^ (uint8_t)(ticks >> 3) ^ frame) % NUM_VISUAL_MODES;
-      } while (next_v == visual_mode);
-      visual_mode = next_v;
-      color_seed = ((uint8_t)ticks * 17) ^ frame;
-    }
-    my_delay(260); // Clean hardware tick debounce
+  if (btn < Vbutton_both) {
+    curr_btn_state = 3; // Both buttons pressed
+  } else if (btn < Vbutton_right) {
+    curr_btn_state = 2; // Right button pressed
+  } else if (btn < Vbutton_left) {
+    curr_btn_state = 1; // Left button pressed
+  } else {
+    curr_btn_state = 0; // Released
   }
 
+  // Trigger action only on initial button press!
+  if (curr_btn_state != last_btn_state && curr_btn_state != 0) {
+    if (curr_btn_state == 1) {
+      // Left Button: Cycle Classical Piece / Movement
+      current_piece = (current_piece + 1) & 3;
+      current_step = 0; // Restart at start of piece
+
+      // Randomly change to a different visual mode every time song changes!
+      uint8_t rand_offset = 1 + (((uint8_t)ticks ^ frame) % (NUM_VISUAL_MODES - 1));
+      visual_mode = (visual_mode + rand_offset) % NUM_VISUAL_MODES;
+    } else if (curr_btn_state == 2) {
+      // Right Button: Cycle Instrument Timbre Mode
+      timbre_mode = (timbre_mode + 1) & 3;
+    } else if (curr_btn_state == 3) {
+      // Both Buttons: Cycle visual mode manually
+      visual_mode = (visual_mode + 1) % NUM_VISUAL_MODES;
+    }
+    my_delay(150);
+  }
+  last_btn_state = curr_btn_state;
+
   // --- Classical Visualizer on 5x4 NeoPixel Matrix ---
-  cli(); // Protect WS2812B 800kHz protocol timing
+  // (Compute pixel colors with interrupts ENABLED so audio timing is never interrupted!)
 
   if (visual_mode == 0) {
     // Mode 0: Golden Baroque Candelabra & Warm Living Candlelight
     uint8_t flicker = (frame * 9 + current_step * 7) & 31;
-    uint32_t c_gold   = pixels.Color(255 - flicker, 155 - (flicker >> 1), 8);
-    uint32_t c_candle = pixels.Color(160, 55, 3);
-    uint32_t c_hearth = pixels.Color(14, 3, 0);
+    uint32_t c_gold   = pixels.Color(255 - flicker, 155 - (flicker >> 1), 10);
+    uint32_t c_candle = pixels.Color(160, 55, 5);
+    uint32_t c_hearth = pixels.Color(15, 4, 1);
 
     matrixFill(c_hearth);
-    // Draw 3 candelabra candles at columns 1, 2, 3
+    // 3 candelabra candles on columns 1, 2, 3
     for (uint8_t x = 1; x <= 3; x++) {
       matrixSet(x, 3, c_candle);
       matrixSet(x, 2, c_candle);
     }
-    // Animated dancing flames leaping dynamically with melody amplitude
+    // Dynamic flame tops leaping with melody amplitude
     uint8_t flame_h = (env_lead >> 6) + 1;
     if (flame_h > 3) flame_h = 3;
     matrixSet(2, 3 - flame_h, c_gold);
@@ -543,72 +521,68 @@ void loop() {
 
   } else if (visual_mode == 1) {
     // Mode 1: Cathedral Stained Glass Rose Window
-    // Symmetrical sacred geometry pulsating with chord progressions
     for (uint8_t y = 0; y < MATRIX_H; y++) {
       for (uint8_t x = 0; x < MATRIX_W; x++) {
-        uint8_t pattern = (x + y + (current_step >> 2) + (color_seed & 3)) & 3;
+        uint8_t pattern = (x + y + (current_step >> 2)) & 3;
         uint32_t glass_color;
         switch (pattern) {
-          case 0: glass_color = pixels.Color(10, 50, 240); break;  // Sapphire Blue
-          case 1: glass_color = pixels.Color(220, 8, 25); break;   // Ruby Red
-          case 2: glass_color = pixels.Color(10, 185, 55); break;  // Emerald Green
-          default: glass_color = pixels.Color(160, 15, 210); break;// Imperial Amethyst
+          case 0: glass_color = pixels.Color(10, 60, 255); break;  // Sapphire Blue
+          case 1: glass_color = pixels.Color(240, 10, 35); break;  // Ruby Red
+          case 2: glass_color = pixels.Color(10, 210, 60); break;  // Emerald Green
+          default: glass_color = pixels.Color(180, 20, 220); break;// Imperial Amethyst
         }
         // Center cross is radiant gold
         if ((x == 2 && (y == 1 || y == 2)) || (y == 1 && (x == 1 || x == 3))) {
-          glass_color = pixels.Color(255, 175, 15);
+          glass_color = pixels.Color(255, 195, 20);
         }
-        uint8_t scale = 110 + (env_lead >> 2);
+        uint8_t scale = 120 + (env_lead >> 2);
         matrixSet(x, y, dimColor(glass_color, scale));
       }
     }
 
   } else if (visual_mode == 2) {
-    // Mode 2: Polyphonic Counterpoint Harp Strings
-    // Visualizes all 3 voices independently in real-time
-    matrixFill(pixels.Color(4, 4, 10));
+    // Mode 2: Polyphonic Counterpoint Harp (Independent Voice Spectrum)
+    matrixFill(pixels.Color(5, 5, 15));
 
-    // Voice 1 (Bass Continuo): Deep amber / copper pillar (Column 0)
+    // Voice 1 (Bass Continuo): Deep amber pillar on Column 0
     uint8_t b_h = (env_bass >> 6);
     for (uint8_t y = 0; y <= b_h && y < MATRIX_H; y++) {
-      matrixSet(0, 3 - y, pixels.Color(240, 110, 15));
+      matrixSet(0, 3 - y, pixels.Color(255, 120, 15));
     }
 
-    // Voice 2 (Harmonic Arpeggio): Emerald & jade wave dancing across Cols 1 & 2
+    // Voice 2 (Arpeggio): Emerald & Cyan wave dancing across Columns 1 & 2
     uint8_t a_col = 1 + ((current_step >> 1) & 1);
     uint8_t a_row = (current_step + (frame >> 2)) % MATRIX_H;
-    matrixSet(a_col, a_row, pixels.Color(25, 210, 120));
-    matrixSet(3 - a_col, 3 - a_row, pixels.Color(15, 120, 200));
+    matrixSet(a_col, a_row, pixels.Color(20, 230, 140));
+    matrixSet(3 - a_col, 3 - a_row, pixels.Color(15, 140, 240));
 
-    // Voice 3 (Solo Cantabile): Brilliant gold & white soaring ribbon (Cols 3 & 4)
+    // Voice 3 (Solo Cantabile): Brilliant gold & white soaring ribbon on Columns 3 & 4
     uint8_t m_col = 3 + (current_step & 1);
     uint8_t m_h = (env_lead >> 6);
     for (uint8_t y = 0; y <= m_h && y < MATRIX_H; y++) {
-      matrixSet(m_col, 3 - y, pixels.Color(255, 220, 140));
+      matrixSet(m_col, 3 - y, pixels.Color(255, 230, 160));
     }
 
   } else if (visual_mode == 3) {
     // Mode 3: Moonlight on Lake Lucerne (Beethoven Nocturne)
-    uint32_t water_deep = pixels.Color(2, 6, 32);
-    matrixFill(water_deep);
+    matrixFill(pixels.Color(3, 8, 35));
 
     // Full silver moon centered at (2, 0)
-    matrixSet(2, 0, pixels.Color(235, 245, 255));
-    matrixSet(1, 0, pixels.Color(40, 90, 180));
-    matrixSet(3, 0, pixels.Color(40, 90, 180));
+    matrixSet(2, 0, pixels.Color(240, 250, 255));
+    matrixSet(1, 0, pixels.Color(50, 100, 190));
+    matrixSet(3, 0, pixels.Color(50, 100, 190));
 
     // Moonlight ripples shimmering across the lake water surface
     uint8_t ripple_y = 1 + (frame % 3);
     uint8_t ripple_x = (2 + (current_step & 1) - ((current_step >> 1) & 1)) % MATRIX_W;
     matrixSet(ripple_x, ripple_y, pixels.Color(130, 215, 255));
-    matrixSet((ripple_x + 1) % MATRIX_W, ripple_y, pixels.Color(30, 80, 170));
+    matrixSet((ripple_x + 1) % MATRIX_W, ripple_y, pixels.Color(40, 95, 180));
 
   } else if (visual_mode == 4) {
-    // Mode 4: Royal Velvet Tapestry & Imperial Gold Fleur-de-lis
-    matrixFill(pixels.Color(24, 2, 14));
-    uint8_t gold_pulse = 160 + (env_lead >> 2);
+    // Mode 4: Royal Velvet & Imperial Gold Fleur-de-lis
+    matrixFill(pixels.Color(28, 2, 16));
+    uint8_t gold_pulse = 180 + (env_lead >> 2);
     uint32_t royal_gold = pixels.Color(gold_pulse, (gold_pulse * 3) >> 2, 10);
-    // Classical diamond fleur-de-lis pattern
     matrixSet(2, 0, royal_gold);
     matrixSet(1, 1, royal_gold);
     matrixSet(2, 1, royal_gold);
@@ -617,59 +591,24 @@ void loop() {
     matrixSet(0, 3, royal_gold);
     matrixSet(4, 3, royal_gold);
 
-  } else if (visual_mode == 5) {
-    // Mode 5: Celestial Starlight & Supernova Constellation
-    matrixFill(pixels.Color(3, 2, 16));
-    // Twinkling background stars
-    for (uint8_t i = 0; i < 4; i++) {
-      uint8_t sx = (frame * 3 + i * 2) % MATRIX_W;
-      uint8_t sy = (frame + i) % MATRIX_H;
-      matrixSet(sx, sy, pixels.Color(60, 110, 220));
-    }
-    // Brilliant supernova igniting on melodic note attacks
-    uint8_t star_x = (current_step * 3) % MATRIX_W;
-    uint8_t star_y = (current_step * 2) % MATRIX_H;
-    uint8_t burst = env_lead;
-    matrixSet(star_x, star_y, pixels.Color(burst, burst, (burst * 3) >> 2));
-
-  } else if (visual_mode == 6) {
-    // Mode 6: Baroque Kaleidoscope & Concentric Sacred Rings
-    for (uint8_t y = 0; y < MATRIX_H; y++) {
-      for (uint8_t x = 0; x < MATRIX_W; x++) {
-        int8_t dx = (int8_t)x - 2;
-        int8_t dy = (int8_t)y - 1;
-        uint8_t dist = (dx * dx + dy * dy * 2);
-        uint8_t phase = (dist + frame + (current_step >> 1)) & 7;
-        uint32_t col;
-        if (phase < 2) {
-          col = pixels.Color(255, 180, 20); // Gold ring
-        } else if (phase < 4) {
-          col = pixels.Color(10, 180, 160); // Turquoise ring
-        } else if (phase < 6) {
-          col = pixels.Color(190, 20, 170); // Violet ring
-        } else {
-          col = pixels.Color(10, 5, 30);
-        }
-        matrixSet(x, y, dimColor(col, 120 + (env_lead >> 2)));
-      }
-    }
-
   } else {
-    // Mode 7: Prismatic Aurora Cantabile
+    // Mode 5: Prismatic Aurora Cantabile
     for (uint8_t y = 0; y < MATRIX_H; y++) {
       for (uint8_t x = 0; x < MATRIX_W; x++) {
-        uint8_t wave = (frame * 3 + x * 20 + y * 30 + current_step * 4) & 0xFF;
+        uint8_t wave = (frame * 4 + x * 25 + y * 35 + current_step * 5) & 0xFF;
         uint8_t r = (wave < 85) ? (wave * 3) : ((wave < 170) ? (255 - (wave - 85) * 3) : 0);
         uint8_t g = (wave < 85) ? (255 - wave * 3) : ((wave < 170) ? 0 : ((wave - 170) * 3));
         uint8_t b = (wave < 85) ? 0 : ((wave < 170) ? ((wave - 85) * 3) : (255 - (wave - 170) * 3));
-        matrixSet(x, y, pixels.Color(r >> 1, g >> 1, b >> 1));
+        matrixSet(x, y, pixels.Color(r, g, b));
       }
     }
   }
 
+  // Atomic, timing-protected LED refresh (only disables interrupts during ~600us pixel send!)
+  cli();
   pixels.show();
-  sei(); // Restore audio interrupt immediately
+  sei();
 
   frame++;
-  my_delay(40); // 25 FPS display update, crystal clear audio
+  my_delay(35); // Smooth ~28 FPS display update
 }

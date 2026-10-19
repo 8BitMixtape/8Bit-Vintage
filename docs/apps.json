@@ -398,7 +398,7 @@
     "source": "bach_air_g_string.cpp",
     "title": "Bach: Air on the G String",
     "tagline": "Baroque polyphony, walking bass & classical suite",
-    "description": "3-voice polyphony with walking bass, harpsichord arpeggios, and soaring violin cantabile with delayed vibrato. Features 4 classical masterpieces (Bach's Air on the G String, Pachelbel's Canon in D, Vivaldi's Winter, Beethoven's Moonlight Sonata), 4 instrument timbres, and 8 generative NeoPixel visualizers that randomize on every song change.",
+    "description": "3-voice polyphony with walking bass, harpsichord arpeggios, and soaring violin cantabile with delayed vibrato. Features 4 classical masterpieces (Bach's Air on the G String, Pachelbel's Canon in D, Vivaldi's Winter, Beethoven's Moonlight Sonata), 4 instrument timbres, and 6 vibrant NeoPixel visualizers that randomize on every song change.",
     "tags": [
       "classical",
       "bach",
@@ -410,8 +410,8 @@
       "beethoven"
     ],
     "manual": "BACH_AIR_G_STRING_MANUAL.md",
-    "flash_bytes": 7266,
-    "wav_bytes": 1558076
+    "flash_bytes": 6186,
+    "wav_bytes": 1332452
   },
   {
     "id": "schaltkreiskontrolle",

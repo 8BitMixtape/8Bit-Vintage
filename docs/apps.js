@@ -111,7 +111,7 @@ window.APPS = [
     "id": "lambada",
     "source": "lambada.cpp",
     "title": "Lambada",
-    "tagline": "Kaoma's tropical summer anthem with accordion & Carimbó groove",
+    "tagline": "Kaoma's tropical summer anthem with accordion & Carimb\u00f3 groove",
     "description": "Full 16-bar arrangement of Lambada ('Chorando se foi') in D minor. Left pot sets tempo (70-160 BPM), right pot controls bass punch & lead brilliance. Left button cycles 4 voices (Accordion, Marimba, 8-Bit, Saw), right button cycles 4 visualizers, hold both for Turbo Stutter Roll!",
     "tags": [
       "lambada",
@@ -148,7 +148,7 @@ window.APPS = [
     "source": "auf_der_heide.cpp",
     "title": "Auf der Heide",
     "tagline": "Vintage German brass march, Oom-Pah tuba & the 3 stomps",
-    "description": "Traditional arrangement of 'Auf der Heide blüht ein kleines Blümelein' ('Erika') in G major. Features brass horns, alternating oom-pah tuba bass, and the 3 heavy stomps ('BUM! BUM! BUM!'). Left pot controls marsch-tempo (75-140 BPM), right pot sets tuba depth. Left button cycles 4 voices (Brass, Accordion, Chiptune, Glockenspiel), right button cycles visualizers, hold both for snare roll!",
+    "description": "Traditional arrangement of 'Auf der Heide bl\u00fcht ein kleines Bl\u00fcmelein' ('Erika') in G major. Features brass horns, alternating oom-pah tuba bass, and the 3 heavy stomps ('BUM! BUM! BUM!'). Left pot controls marsch-tempo (75-140 BPM), right pot sets tuba depth. Left button cycles 4 voices (Brass, Accordion, Chiptune, Glockenspiel), right button cycles visualizers, hold both for snare roll!",
     "tags": [
       "erika",
       "auf-der-heide",
@@ -185,9 +185,9 @@ window.APPS = [
   {
     "id": "kraftwerk_model",
     "source": "kraftwerk_model.cpp",
-    "title": "Kraftwerk — Das Model",
+    "title": "Kraftwerk \u2014 Das Model",
     "tagline": "Analog Minimoog lead, Kling Klang arps, electro drums & 16th bass",
-    "description": "An authentic 8-bit multi-voice synthesizer tribute to Kraftwerk's 1978 electro-pop masterpiece 'Das Model' ('The Model' from Die Mensch-Maschine). Features the haunting Minimoog lead, hypnotic 16th-note Kling Klang arpeggios, driving bassline, and punchy electronic drum synthesis. Left pot tunes clock tempo (90-145 BPM), right pot controls VCF low-pass filter cutoff and sub-bass resonance. Left button cycles 4 synth lead voices, right button cycles 4 Kling Klang visualizers (Mensch-Maschine red/black, Oscilloscope, Die Roboter, Radioaktivität), hold both for computer glitch break!",
+    "description": "An authentic 8-bit multi-voice synthesizer tribute to Kraftwerk's 1978 electro-pop masterpiece 'Das Model' ('The Model' from Die Mensch-Maschine). Features the haunting Minimoog lead, hypnotic 16th-note Kling Klang arpeggios, driving bassline, and punchy electronic drum synthesis. Left pot tunes clock tempo (90-145 BPM), right pot controls VCF low-pass filter cutoff and sub-bass resonance. Left button cycles 4 synth lead voices, right button cycles 4 Kling Klang visualizers (Mensch-Maschine red/black, Oscilloscope, Die Roboter, Radioaktivit\u00e4t), hold both for computer glitch break!",
     "tags": [
       "kraftwerk",
       "das-model",
@@ -206,7 +206,7 @@ window.APPS = [
   {
     "id": "kraftwerk_roboter",
     "source": "kraftwerk_roboter.cpp",
-    "title": "Kraftwerk — Die Roboter",
+    "title": "Kraftwerk \u2014 Die Roboter",
     "tagline": "Vocoder lead, octave-jumping analog bass, mechanical drums & robot visuals",
     "description": "An authentic 8-bit multi-voice synthesizer tribute to Kraftwerk's 1978 electro anthem 'Die Roboter' / 'The Robots' (from Die Mensch-Maschine). Features the iconic vocoder lead ('Wir sind die Roboter' and 'Ja tvoi sluga...'), menacing 16th-note octave-jumping bassline, high robotic arpeggios, and metronomic electronic drum machine. Left pot tunes robot clock tempo (85-140 BPM), right pot sweeps vocoder pulse width and VCF filter cutoff. Left button cycles 4 robotic timbres (Vocoder Buzz, Minimoog Square, 8-Bit, Metallic Ring), right button cycles 4 visualizers (Die Roboter Head, Walking Automaton, 5-Band Spectrum, Cyrillic Teletype), hold both for robot malfunction overload!",
     "tags": [
@@ -335,7 +335,7 @@ window.APPS = [
     "source": "bytebeat_explorer.cpp",
     "title": "Bytebeat Explorer",
     "tagline": "Viznut classics, The 42 Melody, algorithmic arps & bit waterfall",
-    "description": "An interactive hardware explorer for the legendary algorithmic 'one-liner' bytebeat formulas discovered by Viznut (Ville-Matias Heikkilä), Tejeez, and the demoscene. Evaluates raw mathematical integer expressions in real-time to generate evolving chiptune melodies, arpeggios, and fractal polyrhythms. Features 4 iconic formulas: The 42 Melody, Algorithmic Arpeggiator, Chiptune Counter, and Sierpinski Glitch Machine. Left pot sweeps evaluation clock speed (2 kHz to 24 kHz), right pot dynamically shifts bitmasks and glitches equations. Left button cycles 4 formulas, right button cycles 4 reactive bit-matrix visualizers (Bit Waterfall, CRT Scope, Logic Flame, Sierpinski Fractal), hold both for Turbo Overclock Strobe!",
+    "description": "An interactive hardware explorer for the legendary algorithmic 'one-liner' bytebeat formulas discovered by Viznut (Ville-Matias Heikkil\u00e4), Tejeez, and the demoscene. Evaluates raw mathematical integer expressions in real-time to generate evolving chiptune melodies, arpeggios, and fractal polyrhythms. Features 4 iconic formulas: The 42 Melody, Algorithmic Arpeggiator, Chiptune Counter, and Sierpinski Glitch Machine. Left pot sweeps evaluation clock speed (2 kHz to 24 kHz), right pot dynamically shifts bitmasks and glitches equations. Left button cycles 4 formulas, right button cycles 4 reactive bit-matrix visualizers (Bit Waterfall, CRT Scope, Logic Flame, Sierpinski Fractal), hold both for Turbo Overclock Strobe!",
     "tags": [
       "bytebeat",
       "one-liner",
@@ -399,7 +399,7 @@ window.APPS = [
     "source": "bach_air_g_string.cpp",
     "title": "Bach: Air on the G String",
     "tagline": "Baroque polyphony, walking bass & classical suite",
-    "description": "3-voice polyphony with walking bass, harpsichord arpeggios, and soaring violin cantabile with delayed vibrato. Features 4 classical masterpieces (Bach's Air on the G String, Pachelbel's Canon in D, Vivaldi's Winter, Beethoven's Moonlight Sonata), 4 instrument timbres, and 8 generative NeoPixel visualizers that randomize on every song change.",
+    "description": "3-voice polyphony with walking bass, harpsichord arpeggios, and soaring violin cantabile with delayed vibrato. Features 4 classical masterpieces (Bach's Air on the G String, Pachelbel's Canon in D, Vivaldi's Winter, Beethoven's Moonlight Sonata), 4 instrument timbres, and 6 vibrant NeoPixel visualizers that randomize on every song change.",
     "tags": [
       "classical",
       "bach",
@@ -411,8 +411,8 @@ window.APPS = [
       "beethoven"
     ],
     "manual": "BACH_AIR_G_STRING_MANUAL.md",
-    "flash_bytes": 7266,
-    "wav_bytes": 1558076
+    "flash_bytes": 6186,
+    "wav_bytes": 1332452
   },
   {
     "id": "schaltkreiskontrolle",
@@ -434,4 +434,4 @@ window.APPS = [
     "flash_bytes": 6976,
     "wav_bytes": 1491716
   }
-]
+];
