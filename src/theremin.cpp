@@ -105,11 +105,17 @@ volatile uint16_t ticks          = 0;
 volatile uint8_t  last_sample    = 128;
 volatile uint8_t  envelope_vol   = 0;    // Smoothed volume
 
-// Fast pseudo-random generator
-static uint8_t lfsr = 0x7E;
-static inline uint8_t fast_rand() {
-  lfsr = (lfsr >> 1) ^ (-(lfsr & 1) & 0xB8);
-  return lfsr;
+// Custom delay routine using 10 kHz Timer0 audio ticks (immune to disabled millis timer)
+void my_delay(uint16_t ms) {
+  uint16_t duration = ms * 10;
+  uint16_t start;
+  uint8_t sreg = SREG; cli(); start = ticks; SREG = sreg;
+
+  while (1) {
+    uint16_t current;
+    sreg = SREG; cli(); current = ticks; SREG = sreg;
+    if ((uint16_t)(current - start) >= duration) break;
+  }
 }
 
 // ---------------------------------------------------------------------------------------
@@ -119,7 +125,6 @@ ISR(TIMER0_COMPA_vect) {
   ticks++;
 
   // 1. Smooth Portamento Glide (Theremin pitch antenna physics)
-  // Glides toward target increment without zipper noise
   if ((ticks & 3) == 0) {
     if (current_inc < target_inc) {
       uint16_t diff = target_inc - current_inc;
@@ -189,16 +194,14 @@ ISR(TIMER0_COMPA_vect) {
 
   // 6. Vocal Formant Modulation (in Vocal mode)
   if (pitch_mode == 1) {
-    uint8_t formant_env = 255 - (wave_idx1); // Decay per cycle
+    uint8_t formant_env = 255 - wave_idx1; // Decay per cycle
     uint8_t f_sine = pgm_read_byte(&sine_table[wave_idx2]);
     int16_t vocal_burst = (((int16_t)f_sine - 128) * formant_env) >> 8;
     raw_audio = (raw_audio + vocal_burst) >> 1;
   }
 
   // 7. Volume Antenna Attenuation & Saturation
-  // Right pot directly shapes the amplitude envelope
   if ((ticks & 7) == 0) {
-    // Smooth volume follower
     if (envelope_vol < volume_level) envelope_vol++;
     else if (envelope_vol > volume_level) envelope_vol--;
   }
@@ -229,25 +232,25 @@ void update_visuals() {
     return;
   }
 
-  // Calculate normalized pitch (0 .. 4) and volume (0 .. 3)
-  uint8_t pitch_col_pos = ((uint32_t)(current_inc > 400 ? current_inc - 400 : 0) * 5) / 5000;
+  // Snapshot pitch increment safely
+  uint16_t inc_snap;
+  uint8_t sreg = SREG; cli(); inc_snap = current_inc; SREG = sreg;
+
+  // Calculate normalized pitch column (0 .. 4) and volume height (0 .. 3)
+  uint8_t pitch_col_pos = ((uint32_t)(inc_snap > 400 ? inc_snap - 400 : 0) * 5) / 5000;
   if (pitch_col_pos > 4) pitch_col_pos = 4;
   uint8_t vol_height = ((uint16_t)envelope_vol * 4) / 255;
   if (vol_height > 3) vol_height = 3;
 
   if (visual_mode == 0) {
     // Mode 0: EMF Plasma Field (Aura radiating between Pitch & Volume antennas)
-    // Left side = Pitch aura (violet/cyan), Right side = Volume aura (amber/emerald)
     for (uint8_t x = 0; x < 5; x++) {
       for (uint8_t y = 0; y < 4; y++) {
-        uint8_t idx = matrixIndex(x, y);
+        int idx = matrixIndex(x, y);
         if (idx < 0) continue;
 
-        // Electromagnetic wave ripple based on audio frequency and time
         uint8_t wave = (ticks >> 3) + (x * 40) + (y * 50);
         uint8_t pulse = pgm_read_byte(&sine_table[wave]);
-
-        // Brightness modulated by volume antenna
         uint8_t lum = ((uint16_t)pulse * envelope_vol) >> 9;
 
         uint8_t r = 0, g = 0, b = 0;
@@ -263,8 +266,8 @@ void update_visuals() {
           b = lum >> 2;
         }
 
-        // Active antenna fingertip highlights
-        if (x == pitch_col_pos && y == 3 - vol_height) {
+        // Active antenna fingertip highlight
+        if (x == pitch_col_pos && y == (3 - vol_height)) {
           r = 255; g = 255; b = 255;
         }
 
@@ -273,26 +276,21 @@ void update_visuals() {
     }
   } else if (visual_mode == 1) {
     // Mode 1: 1920s Phosphor CRT Oscilloscope
-    // Realistic green phosphor beam drawing the continuous audio wave!
     for (uint8_t x = 0; x < 5; x++) {
-      // Sample waveform phase along X
       uint8_t osc_phase = (phase_osc1 >> 8) + (x * 45);
       uint8_t sample = pgm_read_byte(&sine_table[osc_phase]);
-      // Scale sample to Y (0..3) with volume amplitude
       int16_t amp = (((int16_t)sample - 128) * envelope_vol) >> 8;
       int8_t y_beam = 1 - (amp / 45);
       if (y_beam < 0) y_beam = 0;
       if (y_beam > 3) y_beam = 3;
 
       for (uint8_t y = 0; y < 4; y++) {
-        uint8_t idx = matrixIndex(x, y);
+        int idx = matrixIndex(x, y);
         if (idx < 0) continue;
         if (y == y_beam) {
-          // Bright CRT phosphor trace
-          pixels.setPixelColor(idx, pixels.Color(40, 255, 60));
-        } else if (abs(y - y_beam) == 1) {
-          // Phosphor tube persistence glow
-          pixels.setPixelColor(idx, pixels.Color(0, 45, 10));
+          pixels.setPixelColor(idx, pixels.Color(40, 255, 60)); // Bright trace
+        } else if (abs((int)y - (int)y_beam) == 1) {
+          pixels.setPixelColor(idx, pixels.Color(0, 45, 10));  // Persistence glow
         } else {
           pixels.setPixelColor(idx, pixels.Color(0, 0, 0));
         }
@@ -300,7 +298,6 @@ void update_visuals() {
     }
   } else if (visual_mode == 2) {
     // Mode 2: Chromatic Spectral Ribbon
-    // Maps pitch across rainbow spectrum; vertical height shows volume
     for (uint8_t x = 0; x < 5; x++) {
       uint8_t hue = (pitch_col_pos * 48) + (x * 15);
       uint8_t r = 0, g = 0, b = 0;
@@ -313,7 +310,7 @@ void update_visuals() {
       }
 
       for (uint8_t y = 0; y < 4; y++) {
-        uint8_t idx = matrixIndex(x, 3 - y);
+        int idx = matrixIndex(x, 3 - y);
         if (idx < 0) continue;
         if (y <= vol_height) {
           uint8_t scale = 70 + (y * 55);
@@ -329,21 +326,17 @@ void update_visuals() {
     }
   } else {
     // Mode 3: Sci-Fi UFO Radar Scanner
-    // Extraterrestrial beacon sweeping across the matrix
     uint8_t scan_col = (ticks >> 5) % 5;
     for (uint8_t x = 0; x < 5; x++) {
       for (uint8_t y = 0; y < 4; y++) {
-        uint8_t idx = matrixIndex(x, y);
+        int idx = matrixIndex(x, y);
         if (idx < 0) continue;
 
         if (x == scan_col) {
-          // Radar sweep line: Brilliant alien cyan/purple
-          pixels.setPixelColor(idx, pixels.Color(180, 0, 255));
+          pixels.setPixelColor(idx, pixels.Color(180, 0, 255)); // Radar sweep
         } else if (x == pitch_col_pos && y == (3 - vol_height)) {
-          // UFO target ping!
-          pixels.setPixelColor(idx, pixels.Color(0, 255, 230));
+          pixels.setPixelColor(idx, pixels.Color(0, 255, 230)); // Ping
         } else {
-          // Space radar background
           pixels.setPixelColor(idx, pixels.Color(0, 5, 25));
         }
       }
@@ -382,72 +375,85 @@ void setup() {
 }
 
 // ---------------------------------------------------------------------------------------
-// Main Loop: Sensor Reading, Scale Mapping & Button Logic
+// Main Loop: Sensor Reading, Scale Mapping & Debounced Button Logic
 // ---------------------------------------------------------------------------------------
 void loop() {
   // 1. Read Potentiometers (Pitch & Volume Antennas)
   uint16_t pot_pitch = analogRead(POTI_LEFT);  // PB4 (A2): 0 .. 1023
   uint16_t pot_vol   = analogRead(POTI_RIGHT); // PB2 (A1): 0 .. 1023
 
-  // Map Volume Pot: Exponential curve from silent (0) to maximum (255)
-  // Low pot values = total silence (true theremin hand mute)
+  // Map Volume Pot: Quadratic curve with dead-zone for true acoustic muting
   if (pot_vol < 40) {
     volume_level = 0;
   } else {
     uint32_t v = (uint32_t)(pot_vol - 40);
-    volume_level = (uint8_t)((v * v) / 3800); // Quadratic curve for smooth volume swells
+    volume_level = (uint8_t)((v * v) / 3800);
     if (volume_level > 255) volume_level = 255;
   }
 
   // 2. Map Pitch Potentiometer according to Pitch Mode
+  uint16_t new_target = 1442;
   if (pitch_mode == 3) {
     // Quantized Harmonic Minor Scale: 17 discrete musical steps
     uint8_t note_idx = ((uint32_t)pot_pitch * 17) / 1024;
     if (note_idx > 16) note_idx = 16;
-    target_inc = pgm_read_word(&minor_scale_incs[note_idx]);
+    new_target = pgm_read_word(&minor_scale_incs[note_idx]);
   } else {
-    // Continuous Glissando (Pure 1920s Etherphone):
-    // Smooth quadratic curve spanning 55 Hz (inc ~360) to ~2100 Hz (inc ~13800)
+    // Continuous Glissando (Pure 1920s Etherphone): 55 Hz to ~2100 Hz
     uint32_t p = pot_pitch;
-    target_inc = 360 + (uint16_t)((p * p) >> 6);
+    new_target = 360 + (uint16_t)((p * p) >> 6);
   }
 
-  // 3. Read Button Resistor Ladder (PB3 / A3) with Edge Detection
+  // Atomically update target_inc
+  uint8_t sreg = SREG; cli(); target_inc = new_target; SREG = sreg;
+
+  // 3. Debounced Resistor Ladder Buttons (PB3 / A3)
   uint16_t btn = analogRead(BUTTON_PIN);
-  uint8_t current_btn = 0; // 0=none, 1=both, 2=right, 3=left
+  static uint8_t prev_pressed = 0;
+
   if (btn < Vbutton_both) {
-    current_btn = 1;
-  } else if (btn < Vbutton_right) {
-    current_btn = 2;
-  } else if (btn < Vbutton_left) {
-    current_btn = 3;
-  }
+    // Both Buttons Held: Antenna Ground Touch / Space Ray Strobe
+    touch_strobe = 1;
+  } else {
+    touch_strobe = 0;
 
-  static uint8_t last_btn = 0;
-
-  if (current_btn != last_btn) {
-    if (current_btn == 1) {
-      // Both Buttons Held: Strobe / Touch dive
-      touch_strobe = 1;
-      visual_mode = (visual_mode + 1) & 3; // Also cycle visual mode
-    } else if (current_btn == 3) {
-      // Left Button Pressed: Cycle Pitch Mode
-      pitch_mode = (pitch_mode + 1) & 3;
-      // Also randomize visualizer theme for immediate variety!
-      visual_mode = (visual_mode + 1) & 3;
-    } else if (current_btn == 2) {
-      // Right Button Pressed: Cycle Timbre
+    if (btn < Vbutton_right && prev_pressed == 0) {
+      // Right Button: Cycle Instrument Timbre (Sine, Heterodyne, Cello, Chime)
       timbre_mode = (timbre_mode + 1) & 3;
-    } else {
-      // Released
-      touch_strobe = 0;
+
+      // Color badge flash for clear tactile feedback
+      uint32_t badge = (timbre_mode == 0) ? pixels.Color(0, 100, 255) :   // Blue (Sine)
+                       (timbre_mode == 1) ? pixels.Color(255, 220, 0) :   // Yellow (Heterodyne)
+                       (timbre_mode == 2) ? pixels.Color(255, 60, 0) :    // Orange (Cello/Saw)
+                                            pixels.Color(255, 255, 255);  // White (Chime)
+      pixels.fill(badge, 0, NUMPIXELS);
+      cli(); pixels.show(); sei();
+      my_delay(50);
+      prev_pressed = 1;
+    } else if (btn < Vbutton_left && prev_pressed == 0) {
+      // Left Button: Cycle Pitch / Scale Mode
+      pitch_mode = (pitch_mode + 1) & 3;
+      // Cycle visualizer mode to match
+      visual_mode = (visual_mode + 1) & 3;
+
+      // Color badge flash for mode feedback
+      uint32_t badge = (pitch_mode == 0) ? pixels.Color(0, 255, 220) :  // Cyan (Continuous)
+                       (pitch_mode == 1) ? pixels.Color(200, 0, 255) :  // Violet (Vocal Formant)
+                       (pitch_mode == 2) ? pixels.Color(255, 0, 80) :   // Red (Sci-Fi UFO)
+                                           pixels.Color(0, 255, 40);    // Green (Minor Scale)
+      pixels.fill(badge, 0, NUMPIXELS);
+      cli(); pixels.show(); sei();
+      my_delay(50);
+      prev_pressed = 1;
+    } else if (btn > Vbutton_releaseLevel) {
+      // Button fully released - reset debounce latch
+      prev_pressed = 0;
     }
-    last_btn = current_btn;
   }
 
-  // 4. Update NeoPixel Visualizer (running at ~40 FPS)
+  // 4. Render Visuals
   update_visuals();
 
-  // Small frame pacing delay (~20 ms)
-  delay(20);
+  // Frame pacing using custom 10 kHz audio-tick delay (~20 ms)
+  my_delay(20);
 }

@@ -78,3 +78,4 @@ The matrix renders the invisible electromagnetic field between player and antenn
      pio run --target upload
      ```
    *(Or play `docs/wav/theremin.wav` directly into the tape's audio input).*
+

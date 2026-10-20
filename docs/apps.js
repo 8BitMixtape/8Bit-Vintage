@@ -451,7 +451,7 @@ window.APPS = [
       "glissando"
     ],
     "manual": "THEREMIN_MANUAL.md",
-    "flash_bytes": 4944,
-    "wav_bytes": 1080284
+    "flash_bytes": 5122,
+    "wav_bytes": 1120100
   }
 ];
