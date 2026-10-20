@@ -5,7 +5,76 @@ description: Comprehensive framework for generating 8-bit audio/visual synthesiz
 
 # 8Bit-Vintage & Antigravity ATtiny85 Architecture & Workflows
 
-This skill provides essential domain knowledge, architectural patterns, and standard workflows for creating, testing, and deploying audio synthesizers, animated LED matrix GIF previews, and Web AudioBoot assets for the **8Bit Mixtape** (ATtiny85).
+This skill provides essential domain knowledge, architectural patterns, and standard workflows for creating, testing, and deploying audio synthesizers for the **8Bit Mixtape** and **ABK-20** (ATtiny85).
+
+---
+
+## 🛑 MANDATORY: Two-Phase Sound Development Workflow
+
+When creating new sounds or synthesizers for the **ABK-20** or **8Bit Mixtape**, always strictly adhere to this two-phase process:
+
+```
+  PHASE 1: Local Code & Hardware Testing
+  ┌────────────────────────────────────────────────────────┐
+  │ 1. Write/edit C++ code in src/<app_id>.cpp             │
+  │ 2. Activate in platformio.ini                          │
+  │ 3. Run "pio run" (verify flash <= 6300 bytes)          │
+  │ 4. User uploads & tests physically on hardware         │
+  │ 5. Iterate on sound, controls & visuals                │
+  │                                                        │
+  │ ⛔ DO NOT create GIFs, MP3s, manuals, or apps.json!    │
+  └────────────────────────────────────────────────────────┘
+                            │
+               User says: "Finalize this sound"
+                            ▼
+  PHASE 2: Web Assets & Publishing (ON USER COMMAND ONLY)
+  ┌────────────────────────────────────────────────────────┐
+  │ 1. Generate matrix GIF: scripts/gen_previews.py        │
+  │ 2. Write manual: docs/<APP_ID>_MANUAL.md               │
+  │ 3. Generate preview MP3: scripts/gen_audio_previews.py │
+  │ 4. Copy WAV: cp firmware.wav docs/wav/<app_id>.wav     │
+  │ 5. Register in docs/apps.json & sync docs/apps.js      │
+  │ 6. Commit & push to GitHub                             │
+  └────────────────────────────────────────────────────────┘
+```
+
+### Phase 1: Local Development & Hardware Testing (Iterative Loop)
+1. **Develop Code Locally**:
+   - Write or update `src/<app_id>.cpp`.
+   - Use `my_delay()` (never Arduino's standard `delay()` which hangs when Timer0 is hijacked).
+   - Ensure flash size $\le 6,300$ bytes (TinyAudioBoot ceiling).
+   - Keep RAM $\le 80$ bytes (out of 512B).
+2. **Compile Firmware**:
+   - Select sketch in `platformio.ini` (`build_src_filter = -<*>, +<<app_id>.cpp>`).
+   - Run compilation: `pio run`. PlatformIO compiles and generates `.pio/build/attiny85/firmware.hex` and `.pio/build/attiny85/firmware.wav`.
+3. **Hardware Upload & Testing (User-Driven)**:
+   - Instruct the user to upload: `pio run --target upload` (or play `.pio/build/attiny85/firmware.wav` into the audio jack).
+   - The user tests the sound, potentiometers, buttons, and NeoPixel clarity on physical hardware.
+   - Refine and iterate code based on user feedback.
+4. **STRICT RULE DURING PHASE 1**:
+   - **DO NOT** generate GIFs.
+   - **DO NOT** generate MP3 audio previews.
+   - **DO NOT** write manuals.
+   - **DO NOT** modify `docs/apps.json`, `docs/apps.js`, or `docs/index.html`.
+   - Keep the workspace focused purely on getting the code and hardware sound perfect first!
+
+### Phase 2: Web Assets & Finalization (ONLY ON EXPLICIT USER COMMAND)
+Only when the user is completely satisfied with the sound and explicitly commands to publish/finalize:
+1. **Create Preview GIF**:
+   - Implement `<app_id>_frames()` in `scripts/gen_previews.py`.
+   - Run: `python3 scripts/gen_previews.py <app_id>`.
+2. **Write User Manual**:
+   - Create `docs/<APP_ID_UPPER>_MANUAL.md`.
+3. **Generate Audio Preview MP3**:
+   - Implement `synth_<app_id>()` in `scripts/gen_audio_previews.py`.
+   - Run: `python3 -c "from scripts.gen_audio_previews import ...; write_wav_to_mp3(s, r, 'docs/audio/<app_id>.mp3')"`.
+4. **Publish Production WAV**:
+   - Copy `.pio/build/attiny85/firmware.wav` to `docs/wav/<app_id>.wav`.
+5. **Update Web Catalog**:
+   - Add entry to `docs/apps.json` with final `flash_bytes` and `wav_bytes`.
+   - Sync `docs/apps.js` and verify `docs/index.html`.
+6. **Commit & Push**:
+   - Git stage, commit, and push to GitHub.
 
 ---
 
@@ -49,57 +118,18 @@ This skill provides essential domain knowledge, architectural patterns, and stan
 
 ## 2. Animated Matrix GIF Previews (`scripts/gen_previews.py`)
 
-Every sound application in `src/<app_id>.cpp` must have a corresponding animated preview GIF at `docs/gifs/<app_id>.gif` displayed in the web library (`docs/index.html`).
+*(Executed only in Phase 2 upon user command).*
 
 ### Matrix Geometry & Canvas
 * **Matrix Size**: 5 columns wide $\times$ 4 rows high (20 LEDs total).
 * **Cell Size**: Each virtual LED is rendered as a $30\text{ px} \times 24\text{ px}$ cell with a $1\text{ px}$ dark border (`(10, 10, 10)`), producing an overall GIF dimension of **$150\text{ px} \times 96\text{ px}$**.
 * **Engine**: Python Pillow (`PIL.Image`).
 
-### Step-by-Step Method to Add a New GIF Preview
-
-1. **Open `scripts/gen_previews.py`**.
-2. **Define the Frame Generator Function**:
-   Create `<app_id>_frames()` returning `(frames_list, delay_ms)`:
-   ```python
-   def my_app_frames():
-       total_frames = 48  # Typically 30 to 60 frames (1.5 - 3.0 seconds)
-       frames = []
-       for f in range(total_frames):
-           rows = []
-           for y in range(MATRIX_H):      # 4 rows (y = 0..3)
-               row = []
-               for x in range(MATRIX_W):  # 5 cols (x = 0..4)
-                   # Compute RGB color (0-255) for cell (x, y) at frame f
-                   r, g, b = compute_pixel_color(x, y, f)
-                   row.append((r, g, b))
-               rows.append(row)
-           frames.append(render_frame(rows))
-       return frames, 50  # 50 ms per frame = 20 FPS
-   ```
-
-3. **Register in `RENDERERS`**:
-   At the bottom of `scripts/gen_previews.py`:
-   ```python
-   RENDERERS["my_app"] = my_app_frames
-   ```
-
-4. **Register in `docs/apps.json`**:
-   `scripts/gen_previews.py` inspects `docs/apps.json` for active application IDs:
-   ```json
-   {
-     "id": "my_app",
-     "source": "my_app.cpp",
-     "title": "My Awesome Synth",
-     ...
-   }
-   ```
-
-5. **Generate the GIF**:
-   ```bash
-   python3 scripts/gen_previews.py my_app
-   # Output: docs/gifs/my_app.gif
-   ```
+### Adding a New GIF Preview
+1. In `scripts/gen_previews.py`, define `<app_id>_frames()` returning `(frames_list, delay_ms)` (typically 30–60 frames @ 50 ms = 20 FPS).
+2. Register: `RENDERERS["<app_id>"] = <app_id>_frames`.
+3. Ensure app is registered in `docs/apps.json`.
+4. Run: `python3 scripts/gen_previews.py <app_id>`. Output: `docs/gifs/<app_id>.gif`.
 
 ---
 
@@ -119,7 +149,7 @@ When designing visualizer frames for retro synthesizers (like *Léon Theremin*, 
 
 ## 4. Audio Preview Generation (`scripts/gen_audio_previews.py`)
 
-Along with the GIF, every application has an 8-bit synthesized MP3 preview sample (`docs/audio/<app_id>.mp3`) played in the web catalog:
+*(Executed only in Phase 2 upon user command).*
 
 1. **Define Synthesis Routine** in `scripts/gen_audio_previews.py`:
    ```python
@@ -131,10 +161,7 @@ Along with the GIF, every application has an 8-bit synthesized MP3 preview sampl
        # Emulate the C++ DDS oscillator algorithm in Python...
        return samples, sample_rate
    ```
-2. **Add to `synths` List** in `main()`:
-   ```python
-   ("my_app", synth_my_app),
-   ```
+2. **Add to `synths` List** in `main()`.
 3. **Generate MP3 via FFmpeg**:
    ```bash
    python3 -c "from scripts.gen_audio_previews import synth_my_app, write_wav_to_mp3, AUDIO_DIR; s, r = synth_my_app(); write_wav_to_mp3(s, r, AUDIO_DIR / 'my_app.mp3')"
@@ -151,28 +178,12 @@ Along with the GIF, every application has an 8-bit synthesized MP3 preview sampl
   pio run
   # Output: .pio/build/attiny85/firmware.hex and .pio/build/attiny85/firmware.wav
   ```
-* **Publishing WAV**:
+* **Publishing WAV (Phase 2 Only)**:
   ```bash
   cp .pio/build/attiny85/firmware.wav docs/wav/<app_id>.wav
   ```
-* **Syncing Metadata**:
+* **Syncing Metadata (Phase 2 Only)**:
   Update `flash_bytes` and `wav_bytes` in `docs/apps.json`, then regenerate `docs/apps.js`:
   ```bash
   python3 -c "import json; apps = json.load(open('docs/apps.json')); open('docs/apps.js', 'w').write('// Generated by scripts/build_wavs.py from apps.json - do not edit.\nwindow.APPS = ' + json.dumps(apps, indent=2) + ';\n')"
   ```
-
----
-
-## 6. Complete Checklist for New Applications
-
-When adding or updating any sketch in 8Bit-Vintage:
-- [ ] Implement C++ sketch in `src/<app_id>.cpp` using `my_delay()` (never standard `delay()`).
-- [ ] Activate `+<<app_id>.cpp>` in `platformio.ini`.
-- [ ] Verify build with `pio run` (check flash usage $\le 6,300$ bytes).
-- [ ] Copy `.pio/build/attiny85/firmware.wav` to `docs/wav/<app_id>.wav`.
-- [ ] Add entry to `docs/apps.json` with accurate byte counts and tags.
-- [ ] Add frame renderer in `scripts/gen_previews.py` and run `python3 scripts/gen_previews.py <app_id>`.
-- [ ] Add audio synthesizer in `scripts/gen_audio_previews.py` and generate `docs/audio/<app_id>.mp3`.
-- [ ] Write user documentation in `docs/<APP_ID_UPPER>_MANUAL.md`.
-- [ ] Sync `docs/apps.js` and verify display in `docs/index.html`.
-- [ ] Commit and push to GitHub.

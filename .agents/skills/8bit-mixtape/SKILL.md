@@ -91,6 +91,21 @@ The hallmark feature of the 8Bit Mixtape NEO is eliminating dedicated hardware p
    - TinyAudioBoot supports write modes that directly update EEPROM parameters without reflashing the program flash.
 
 > **CRITICAL RULE**: Never trigger PlatformIO automated uploads (`--target upload`) automatically. The physical power cycle must be manually coordinated with audio playback.
+>
+> **TWO-PHASE SOUND DEVELOPMENT WORKFLOW (ABK-20 / 8Bit Mixtape)**:
+> 1. **Phase 1 (Development & Hardware Testing)**:
+>    - Develop/iterate code in `src/<app_id>.cpp` locally.
+>    - Keep flash $\le 6,300$ bytes (under TinyAudioBoot ceiling).
+>    - Compile with `pio run` to produce `.pio/build/attiny85/firmware.wav`.
+>    - The user uploads and tests physically on the hardware.
+>    - **DO NOT** generate GIFs, MP3s, manuals, or update `docs/apps.json` / `docs/index.html` during this phase.
+> 2. **Phase 2 (Publishing & Asset Generation - ONLY ON EXPLICIT USER COMMAND)**:
+>    - Only when the user is satisfied and gives the explicit command:
+>      - Generate matrix preview GIF (`scripts/gen_previews.py`).
+>      - Write manual (`docs/<APP_ID>_MANUAL.md`).
+>      - Generate preview MP3 (`scripts/gen_audio_previews.py`).
+>      - Copy WAV to `docs/wav/<app_id>.wav`, register in `docs/apps.json`, and sync `docs/apps.js`.
+>      - Commit and push to GitHub.
 
 ---
 
