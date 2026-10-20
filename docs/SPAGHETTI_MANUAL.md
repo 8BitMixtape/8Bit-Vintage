@@ -70,3 +70,4 @@ You can record your own live voice or convert any audio file into a C header usi
   ```bash
   python3 scripts/audio2sample.py voice.wav -o include/my_sample.h
   ```
+
