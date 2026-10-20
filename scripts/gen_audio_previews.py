@@ -2093,6 +2093,46 @@ def synth_theremin():
     return samples, sample_rate
 
 
+# ---------------------------------------------------------------------------
+# 26. spaghetti.cpp — Spaghetti! The Italian Talking Chip
+# ---------------------------------------------------------------------------
+def synth_spaghetti():
+    sample_rate = 10000
+    header = ROOT / "include" / "spageti.h"
+    text = header.read_text()
+    body = text[text.find("{") + 1 : text.find("}")]
+    raw = [int(x.strip()) for x in body.split(",") if x.strip().isdigit()]
+
+    samples = bytearray()
+
+    def play_pass(speed_us, crush_bits, max_len=None):
+        step = (1000000.0 / speed_us) / sample_rate
+        pos = 0.0
+        limit = len(raw) if max_len is None else min(len(raw), max_len)
+        while pos < limit:
+            idx = int(pos)
+            s = raw[idx]
+            if crush_bits > 0:
+                s = (s >> crush_bits) << crush_bits
+            samples.append(s)
+            pos += step
+
+    # Pass 1: Clean natural speech (speed ~260 us)
+    play_pass(speed_us=260, crush_bits=0)
+    # Pause
+    samples.extend([128] * 2500)
+    # Pass 2: Pitch-shifted deep bitcrushed cyber voice
+    play_pass(speed_us=380, crush_bits=3)
+    # Pause
+    samples.extend([128] * 2500)
+    # Pass 3: Stutter "Spag-Spaghetti!"
+    play_pass(speed_us=220, crush_bits=1, max_len=len(raw) // 2)
+    samples.extend([128] * 800)
+    play_pass(speed_us=240, crush_bits=0)
+
+    return samples, sample_rate
+
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -2121,6 +2161,7 @@ def main():
         ("bach_air_g_string", synth_bach_air_g_string),
         ("schaltkreiskontrolle", synth_schaltkreiskontrolle),
         ("theremin", synth_theremin),
+        ("spaghetti", synth_spaghetti),
     ]
 
     for name, fn in synths:

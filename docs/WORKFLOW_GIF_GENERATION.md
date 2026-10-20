@@ -142,3 +142,4 @@ Every application should also have an accompanying synthesized audio preview in 
    ```bash
    python3 -c "from scripts.gen_audio_previews import synth_my_synth, write_wav_to_mp3, AUDIO_DIR; s, r = synth_my_synth(); write_wav_to_mp3(s, r, AUDIO_DIR / 'my_synth.mp3')"
    ```
+

@@ -452,5 +452,25 @@
     "manual": "THEREMIN_MANUAL.md",
     "flash_bytes": 5122,
     "wav_bytes": 1120100
+  },
+  {
+    "id": "spaghetti",
+    "source": "spaghetti.cpp",
+    "title": "Spaghetti!",
+    "tagline": "Italian speech chip, dynamic bitcrush & stutter loop",
+    "description": "The Italian talking chip! Digitized 8-bit speech sampler saying 'Spaghetti!'. Left pot modulates pitch from deep monster bass to hyper chipmunk, right pot controls real-time bitcrush quantization. Pushbuttons trigger clean playback, crushed cyber-voice, or machine-gun 'Spag-Spag-Spaghetti!' stutter loops with dynamic Italian Tricolore LED matrix amplitude pulsing.",
+    "tags": [
+      "speech",
+      "voice",
+      "talking-chip",
+      "spaghetti",
+      "sampler",
+      "bitcrush",
+      "italian",
+      "lo-fi"
+    ],
+    "manual": "SPAGHETTI_MANUAL.md",
+    "flash_bytes": 6196,
+    "wav_bytes": 1332452
   }
 ]

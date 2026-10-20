@@ -1263,6 +1263,50 @@ def theremin_frames():
 RENDERERS["theremin"] = theremin_frames
 
 
+# ---------------------------------------------------------------------------
+# 23. spaghetti.cpp — Spaghetti! The Italian Talking Chip
+# ---------------------------------------------------------------------------
+def spaghetti_frames():
+    total_frames = 50
+    frames = []
+    for f in range(total_frames):
+        rows = []
+        if f < 25:
+            # Speaking phase: Italian Tricolore amplitude burst
+            amp = int(abs(math.sin(f * 0.5) * math.cos(f * 0.8)) * 255)
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if x == 4 and y == 1:
+                        row.append((255, 255, 255)) # Pot indicator
+                    elif x < 2:
+                        row.append((0, amp, amp >> 3)) # Basil Green
+                    elif x == 2:
+                        row.append((amp, amp, amp))     # Mozzarella White
+                    else:
+                        row.append((amp, 0, 0))         # Pomodoro Red
+                rows.append(row)
+        else:
+            # Idle phase: Breathing Italian flag glow
+            val = int(abs(math.sin(f * 0.25)) * 120 + 20)
+            for y in range(MATRIX_H):
+                row = []
+                for x in range(MATRIX_W):
+                    if x == 4 and y == 1:
+                        row.append((255, 255, 255))
+                    elif x < 2:
+                        row.append((0, val, 0))
+                    elif x == 2:
+                        row.append((val, val, val))
+                    else:
+                        row.append((val, 0, 0))
+                rows.append(row)
+        frames.append(render_frame(rows))
+    return frames, 60
+
+RENDERERS["spaghetti"] = spaghetti_frames
+
+
 if __name__ == "__main__":
     main()
 
