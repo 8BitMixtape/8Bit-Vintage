@@ -163,3 +163,5 @@ output = (t >> 7 | t | t >> 6) * 10 + 4 * (t & t >> 13 | t >> 6);
   * In v0.2, PAM8002 Pin 1 (`SHT`) is hardwired to GND, pulling $4\text{–}6\text{ mA}$ quiescent idle current even when headphones are plugged in.
   * In v0.3, the spare Ring switch on `Jack2` (PJ-317 Pins 3 & 5) paired with a $100\text{k}\Omega$ pull-up resistor to $V_{CC}$ enables **autonomous hardware auto-shutdown ($< 0.5\,\mu\text{A}$)** when a 3.5mm plug is inserted.
   * Full specification, truth table, and bodge guide: [docs/AMP_AUTO_SHUTDOWN_CIRCUIT.md](file:///home/dusjagr/Documents/8bit_Mixtape/ABK-20/docs/AMP_AUTO_SHUTDOWN_CIRCUIT.md).
+* **Star Grounding & Audio Isolation (v0.3)**:
+  * Route a dedicated clean analog ground trace for `POT3-Vol1`, `Jack2`, `C3`, and `U2` directly back to the USB-C ground entry, completely separating it from the heavy $1.2\text{ kHz}$ switching ground return of the 20× NeoPixels to eliminate ground-bounce hissing.
