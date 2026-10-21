@@ -42,7 +42,7 @@ void setup() {
   // Do NOT set pinMode for PB4 anymore since it's analog input (POTI_LEFT)
 
   pixels.begin();
-  pixels.setBrightness(50); // Moderate brightness
+  pixels.setBrightness(105); // Moderate brightness
   
   // High-Speed PWM on Timer1 for PB1 (OC1A)
   PLLCSR |= (1 << PLLE);               
@@ -197,6 +197,21 @@ void drawIndicator(uint8_t indicator_y) {
   pixels.setPixelColor(rightColIndices[indicator_y], pixels.Color(255, 255, 255));
 }
 
+// Helper function to read pots calibrated for 4.7k series resistor & inverted polarity:
+// 4.7k to VCC + 10k pot to GND limits raw ADC to ~0 (CW/up = max) - 696 (CCW/down = min).
+static inline uint8_t readPot(uint8_t pin) {
+  int16_t raw = analogRead(pin);
+  const int16_t ADC_TOP = 670; // Margin at top end
+  const int16_t ADC_BOT = 15;  // Margin at bottom end
+  if (raw > ADC_TOP) raw = ADC_TOP;
+  if (raw < ADC_BOT) raw = ADC_BOT;
+  // Map raw: 670 (down/CCW) -> 0, 15 (up/CW) -> 255
+  uint16_t diff = ADC_TOP - raw; // 0 to 655
+  uint16_t val = (diff * 100) >> 8; // 0 to 255
+  if (val > 255) val = 255;
+  return (uint8_t)val;
+}
+
 void loop() {
   uint16_t btn = analogRead(BUTTON_PIN);
   
@@ -205,12 +220,13 @@ void loop() {
     
     static uint8_t step = 0;
     
-    // Read Potentiometers
-    uint16_t p1 = analogRead(POTI_LEFT); // Filter cutoff mapping
-    filter_mod = p1 >> 2; // 0-255 manual acid control!
+    // Read Potentiometers (calibrated for 4.7k series resistor)
+    uint8_t p1 = readPot(POTI_LEFT);  // Filter cutoff mapping (0-255)
+    filter_mod = p1; // Manual acid control!
     
-    uint16_t p2 = analogRead(POTI_RIGHT); // Pattern mapping
-    uint8_t current_pattern = p2 >> 8; // 0 to 3
+    uint8_t p2 = readPot(POTI_RIGHT); // Pattern mapping (0-255)
+    uint8_t current_pattern = p2 >> 6; // 0 to 3
+    if (current_pattern > 3) current_pattern = 3;
     int tempo_delay = 115; // Fixed tempo when changing patterns
     
     // Trigger Drum (read from PROGMEM!)
@@ -251,8 +267,8 @@ void loop() {
     // Idle Mode!
     is_playing = 0;
     
-    uint16_t p1 = analogRead(POTI_LEFT) >> 2;  // 0-255
-    uint16_t p2 = analogRead(POTI_RIGHT) >> 2; // 0-255
+    uint8_t p1 = readPot(POTI_LEFT);  // 0-255
+    uint8_t p2 = readPot(POTI_RIGHT); // 0-255
     
     uint8_t val = (millis() / 20) % 255;
     if (val > 127) val = 255 - val; // 0 to 127
@@ -265,7 +281,7 @@ void loop() {
     for(uint8_t i=0; i<NUMPIXELS; i++) {
       pixels.setPixelColor(i, pixels.Color(r, g, b)); 
     }
-    drawIndicator(p2 >> 6); // Show tempo pot in idle
+    drawIndicator(p2 >> 6); // Show pattern selection in idle
     cli(); pixels.show(); sei(); // Disable interrupts during NeoPixel bit-bang!
     delay(10);
   }

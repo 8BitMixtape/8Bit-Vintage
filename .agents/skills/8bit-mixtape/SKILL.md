@@ -65,9 +65,15 @@ The ATtiny85 offers only 8 physical pins (6 usable GPIOs). Squeezing a full synt
 ### Pin Allocation Matrix
 * **PB0 (Pin 5)**: **NeoPixel LED Data**. High-speed 800 kHz single-wire protocol driving WS2812B / SK6812 arrays (8 LEDs on cassette, 20 LEDs on ABK-20 5x4 matrix).
 * **PB1 (Pin 6)**: **Audio PWM Output**. Driven by high-speed Timer1 PLL (64 MHz carrier ~250 kHz). Filtered by an RC low-pass filter (`R8` = 100Ω/330Ω, `C2` = 100nF/1µF) to line-level / headphone output.
-* **PB2 / ADC1 (Pin 7)**: **Right Control Potentiometer & CV Input**. 10kΩ linear pot tapped for pitch, speed, or filter parameter. Can take external 0–5V CV modulation.
-* **PB3 / ADC3 (Pin 2)**: **Resistor Ladder Navigation Buttons**. Buttons (Left, Right, Mode) connect through a resistor voltage divider to a single analog input, producing discrete voltage steps for distinct button presses.
-* **PB4 / ADC2 (Pin 3)**: **Left Control Potentiometer & Audio Bootloader Input**. Serves dual purpose: read as analog input for control during synth execution, or AC-coupled via `C1` (100nF) to receive FSK audio programming data.
+* **PB2 / ADC1 (Pin 7)**: **Right Control Slide Fader (`RV1`) & CV Input**. 10kΩ linear slider with $4.7\text{k}\Omega$ series resistor to $V_{CC}$. Sliding UP increases ADC ($15 \to 670$, direct polarity).
+* **PB3 / ADC3 (Pin 2)**: **Resistor Ladder Navigation Buttons & Toggle Switch**. Buttons and SPDT toggle connect through a resistor voltage divider to a single analog input (accounting for the mechanical lever inversion on SPDT toggle):
+  * **Idle / Released** (Center toggle, no button): $2.62\text{ V}$ ($\approx 536$ ADC counts, threshold $> 450$)
+  * **Toggle Switch Physical UP**: $1.36\text{ V}$ ($\approx 278$ ADC counts, threshold $240\text{--}310$)
+  * **Toggle Switch Physical DOWN**: $1.74\text{ V}$ ($\approx 356$ ADC counts, threshold $320\text{--}420$)
+  * **Button 3 (SW4) Pressed Solo**: $1.00\text{ V}$ ($\approx 205$ ADC counts, threshold $185\text{--}235$)
+  * **Button 3 (SW4) + Toggle Physical UP**: $0.72\text{ V}$ ($\approx 147$ ADC counts, threshold $< 155$)
+  * **Button 3 (SW4) + Toggle Physical DOWN**: $0.83\text{ V}$ ($\approx 170$ ADC counts, threshold $155\text{--}180$)
+* **PB4 / ADC2 (Pin 3)**: **Left Control Rotary Potentiometer (`POT2`) & Audio Bootloader Input**. 10kΩ linear pot with $4.7\text{k}\Omega$ series resistor to $V_{CC}$. Turning CW decreases ADC ($670 \to 15$, inverted polarity). AC-coupled via `C1` (100nF) to receive FSK audio programming data.
 * **PB5 / ADC0 (Pin 1)**: **Reset / Sync Output / Gate Clock**. Normally hardware reset. When `RSTDISBL` fuse is set, operates as GPIO for clock sync output (Korg Volca / Pocket Operator) or digital serial communication.
 
 ---

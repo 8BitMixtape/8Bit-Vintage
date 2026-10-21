@@ -111,7 +111,7 @@ window.APPS = [
     "id": "lambada",
     "source": "lambada.cpp",
     "title": "Lambada",
-    "tagline": "Kaoma's tropical summer anthem with accordion & Carimb\u00f3 groove",
+    "tagline": "Kaoma's tropical summer anthem with accordion & Carimbó groove",
     "description": "Full 16-bar arrangement of Lambada ('Chorando se foi') in D minor. Left pot sets tempo (70-160 BPM), right pot controls bass punch & lead brilliance. Left button cycles 4 voices (Accordion, Marimba, 8-Bit, Saw), right button cycles 4 visualizers, hold both for Turbo Stutter Roll!",
     "tags": [
       "lambada",
@@ -148,7 +148,7 @@ window.APPS = [
     "source": "auf_der_heide.cpp",
     "title": "Auf der Heide",
     "tagline": "Vintage German brass march, Oom-Pah tuba & the 3 stomps",
-    "description": "Traditional arrangement of 'Auf der Heide bl\u00fcht ein kleines Bl\u00fcmelein' ('Erika') in G major. Features brass horns, alternating oom-pah tuba bass, and the 3 heavy stomps ('BUM! BUM! BUM!'). Left pot controls marsch-tempo (75-140 BPM), right pot sets tuba depth. Left button cycles 4 voices (Brass, Accordion, Chiptune, Glockenspiel), right button cycles visualizers, hold both for snare roll!",
+    "description": "Traditional arrangement of 'Auf der Heide blüht ein kleines Blümelein' ('Erika') in G major. Features brass horns, alternating oom-pah tuba bass, and the 3 heavy stomps ('BUM! BUM! BUM!'). Left pot controls marsch-tempo (75-140 BPM), right pot sets tuba depth. Left button cycles 4 voices (Brass, Accordion, Chiptune, Glockenspiel), right button cycles visualizers, hold both for snare roll!",
     "tags": [
       "erika",
       "auf-der-heide",
@@ -185,9 +185,9 @@ window.APPS = [
   {
     "id": "kraftwerk_model",
     "source": "kraftwerk_model.cpp",
-    "title": "Kraftwerk \u2014 Das Model",
+    "title": "Kraftwerk — Das Model",
     "tagline": "Analog Minimoog lead, Kling Klang arps, electro drums & 16th bass",
-    "description": "An authentic 8-bit multi-voice synthesizer tribute to Kraftwerk's 1978 electro-pop masterpiece 'Das Model' ('The Model' from Die Mensch-Maschine). Features the haunting Minimoog lead, hypnotic 16th-note Kling Klang arpeggios, driving bassline, and punchy electronic drum synthesis. Left pot tunes clock tempo (90-145 BPM), right pot controls VCF low-pass filter cutoff and sub-bass resonance. Left button cycles 4 synth lead voices, right button cycles 4 Kling Klang visualizers (Mensch-Maschine red/black, Oscilloscope, Die Roboter, Radioaktivit\u00e4t), hold both for computer glitch break!",
+    "description": "An authentic 8-bit multi-voice synthesizer tribute to Kraftwerk's 1978 electro-pop masterpiece 'Das Model' ('The Model' from Die Mensch-Maschine). Features the haunting Minimoog lead, hypnotic 16th-note Kling Klang arpeggios, driving bassline, and punchy electronic drum synthesis. Left pot tunes clock tempo (90-145 BPM), right pot controls VCF low-pass filter cutoff and sub-bass resonance. Left button cycles 4 synth lead voices, right button cycles 4 Kling Klang visualizers (Mensch-Maschine red/black, Oscilloscope, Die Roboter, Radioaktivität), hold both for computer glitch break!",
     "tags": [
       "kraftwerk",
       "das-model",
@@ -206,7 +206,7 @@ window.APPS = [
   {
     "id": "kraftwerk_roboter",
     "source": "kraftwerk_roboter.cpp",
-    "title": "Kraftwerk \u2014 Die Roboter",
+    "title": "Kraftwerk — Die Roboter",
     "tagline": "Vocoder lead, octave-jumping analog bass, mechanical drums & robot visuals",
     "description": "An authentic 8-bit multi-voice synthesizer tribute to Kraftwerk's 1978 electro anthem 'Die Roboter' / 'The Robots' (from Die Mensch-Maschine). Features the iconic vocoder lead ('Wir sind die Roboter' and 'Ja tvoi sluga...'), menacing 16th-note octave-jumping bassline, high robotic arpeggios, and metronomic electronic drum machine. Left pot tunes robot clock tempo (85-140 BPM), right pot sweeps vocoder pulse width and VCF filter cutoff. Left button cycles 4 robotic timbres (Vocoder Buzz, Minimoog Square, 8-Bit, Metallic Ring), right button cycles 4 visualizers (Die Roboter Head, Walking Automaton, 5-Band Spectrum, Cyrillic Teletype), hold both for robot malfunction overload!",
     "tags": [
@@ -335,7 +335,7 @@ window.APPS = [
     "source": "bytebeat_explorer.cpp",
     "title": "Bytebeat Explorer",
     "tagline": "Viznut classics, The 42 Melody, algorithmic arps & bit waterfall",
-    "description": "An interactive hardware explorer for the legendary algorithmic 'one-liner' bytebeat formulas discovered by Viznut (Ville-Matias Heikkil\u00e4), Tejeez, and the demoscene. Evaluates raw mathematical integer expressions in real-time to generate evolving chiptune melodies, arpeggios, and fractal polyrhythms. Features 4 iconic formulas: The 42 Melody, Algorithmic Arpeggiator, Chiptune Counter, and Sierpinski Glitch Machine. Left pot sweeps evaluation clock speed (2 kHz to 24 kHz), right pot dynamically shifts bitmasks and glitches equations. Left button cycles 4 formulas, right button cycles 4 reactive bit-matrix visualizers (Bit Waterfall, CRT Scope, Logic Flame, Sierpinski Fractal), hold both for Turbo Overclock Strobe!",
+    "description": "An interactive hardware explorer for the legendary algorithmic 'one-liner' bytebeat formulas discovered by Viznut (Ville-Matias Heikkilä), Tejeez, and the demoscene. Evaluates raw mathematical integer expressions in real-time to generate evolving chiptune melodies, arpeggios, and fractal polyrhythms. Features 4 iconic formulas: The 42 Melody, Algorithmic Arpeggiator, Chiptune Counter, and Sierpinski Glitch Machine. Left pot sweeps evaluation clock speed (2 kHz to 24 kHz), right pot dynamically shifts bitmasks and glitches equations. Left button cycles 4 formulas, right button cycles 4 reactive bit-matrix visualizers (Bit Waterfall, CRT Scope, Logic Flame, Sierpinski Fractal), hold both for Turbo Overclock Strobe!",
     "tags": [
       "bytebeat",
       "one-liner",
@@ -437,7 +437,7 @@ window.APPS = [
   {
     "id": "theremin",
     "source": "theremin.cpp",
-    "title": "L\u00e9on Theremin 1920",
+    "title": "Léon Theremin 1920",
     "tagline": "Continuous etherphone, space synth & EMF antenna visualizer",
     "description": "A tribute to the world's first electronic instrument played without physical contact. Left pot controls continuous microtonal pitch (55 Hz to 2.1 kHz) with smooth portamento glide and organic 5.5 Hz finger vibrato. Right pot controls volume articulation from silence to soaring forte. Features 4 play modes (Glissando, Vocal Formant, Sci-Fi UFO, Quantized Harmonic Minor), 4 vintage timbres, and 4 reactive EMF matrix visualizers.",
     "tags": [
@@ -473,5 +473,27 @@ window.APPS = [
     "manual": "SPAGHETTI_MANUAL.md",
     "flash_bytes": 6196,
     "wav_bytes": 1332452
+  },
+  {
+    "id": "interface_test_akb20",
+    "source": "interface_test_AKB20.cpp",
+    "title": "ABK-20 Interface & Diagnostics",
+    "tagline": "Hardware diagnostics, visual meters & synthesizer test",
+    "description": "Comprehensive hardware diagnostics for the ABK-20 synthesizer: dual 4-level vertical LED level meters for rotary pot (smooth pitch sweep) and slide fader (triangle/saw/pulse timbre morphing), dedicated standby backlights for SPDT toggle (Major Acid Arpeggio / Bouncy Bunny Hop), Button 3 octave boost, and a full-matrix beat-synced rainbow wash.",
+    "tags": [
+      "test",
+      "diagnostics",
+      "hardware",
+      "abk-20",
+      "meters",
+      "synth",
+      "bunny",
+      "arpeggiator",
+      "rainbow"
+    ],
+    "manual": "INTERFACE_TEST_AKB20_MANUAL.md",
+    "flash_bytes": 3688,
+    "wav_bytes": 854660
   }
-];
+]
+;

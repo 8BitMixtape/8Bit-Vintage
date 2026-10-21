@@ -2133,6 +2133,90 @@ def synth_spaghetti():
     return samples, sample_rate
 
 
+# ---------------------------------------------------------------------------
+# 27. ABK-20 Hardware & Interface Test
+# ---------------------------------------------------------------------------
+def synth_interface_test_akb20():
+    sample_rate = 15600
+    duration_sec = 6.0
+    total_samples = int(sample_rate * duration_sec)
+    samples = bytearray(total_samples)
+
+    arp_mult = [4, 5, 6, 8]
+    phase_acc = 0
+    hop_timer = 0
+    hop_env = 0
+
+    for i in range(total_samples):
+        t = i / sample_rate
+
+        # Mode progression:
+        # 0.0 - 2.0s: Center Lead (pitch sweep + wave morph)
+        # 2.0 - 4.0s: Toggle UP Arpeggio (+ Button 3 octave boost at 3.0-4.0s)
+        # 4.0 - 6.0s: Toggle DOWN Bunny Hop (+ Button 3 mega squeak at 5.0-6.0s)
+
+        if t < 2.0:
+            # Mode 0: Center Lead Tone
+            base_pitch = 100 + int(250 * (t / 2.0))
+            cur_inc = int(base_pitch * 256 / sample_rate * 8)
+            phase_acc = (phase_acc + cur_inc) & 0xFFFF
+            saw = (phase_acc >> 8) & 0xFF
+
+            # Morph from Triangle -> Saw -> Pulse PWM
+            if t < 0.7:
+                s = (saw << 1) if (saw < 128) else ((255 - saw) << 1)
+            elif t < 1.4:
+                s = saw
+            else:
+                pwm = 80 + int(90 * math.sin(t * 10))
+                s = 220 if (saw > pwm) else 35
+
+        elif t < 4.0:
+            # Mode 1: Toggle UP Major Acid Arpeggio
+            base_pitch = 220
+            cur_inc = int(base_pitch * 256 / sample_rate * 8)
+            step = int((t - 2.0) * 16) % 4
+            cur_inc = (cur_inc * arp_mult[step]) >> 2
+            if t >= 3.0:
+                cur_inc <<= 1 # Button 3 Octave Boost!
+
+            phase_acc = (phase_acc + cur_inc) & 0xFFFF
+            saw = (phase_acc >> 8) & 0xFF
+            s = saw
+            if t >= 3.0:
+                s = 255 if s > 200 else (0 if s < 55 else s) # Overdrive
+
+        else:
+            # Mode 2: Toggle DOWN Bunny Hop!
+            base_pitch = 140
+            cur_inc = int(base_pitch * 256 / sample_rate * 8)
+
+            # Accelerated hop interval
+            hop_interval = int(sample_rate * 0.14) # ~7 hops/sec
+            hop_timer += 1
+            if hop_timer >= hop_interval:
+                hop_timer = 0
+                hop_env = 240
+
+            if (i & 7) == 0 and hop_env > 2:
+                hop_env -= 3
+
+            cur_inc += (cur_inc * hop_env) >> 7
+            if t >= 5.0:
+                cur_inc <<= 2 # Mega Kangaroo Jump (+2 Octaves!)
+
+            phase_acc = (phase_acc + cur_inc) & 0xFFFF
+            saw = (phase_acc >> 8) & 0xFF
+            boing = (saw * hop_env) >> 8
+            s = (saw + boing) ^ (boing >> 1)
+            if t >= 5.0:
+                s = 255 if s > 200 else (0 if s < 55 else s)
+
+        samples[i] = max(0, min(255, s))
+
+    return samples, sample_rate
+
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -2162,6 +2246,7 @@ def main():
         ("schaltkreiskontrolle", synth_schaltkreiskontrolle),
         ("theremin", synth_theremin),
         ("spaghetti", synth_spaghetti),
+        ("interface_test_akb20", synth_interface_test_akb20),
     ]
 
     for name, fn in synths:

@@ -1304,7 +1304,90 @@ def spaghetti_frames():
         frames.append(render_frame(rows))
     return frames, 60
 
-RENDERERS["spaghetti"] = spaghetti_frames
+# ---------------------------------------------------------------------------
+# 24. interface_test_akb20 — ABK-20 Hardware & Interface Diagnostic Test
+# ---------------------------------------------------------------------------
+def interface_test_akb20_frames():
+    def wheel_rgb(pos, b):
+        pos = (255 - pos) & 255
+        if pos < 85:
+            r = 255 - pos * 3
+            g = 0
+            bl = pos * 3
+        elif pos < 170:
+            pos -= 85
+            r = 0
+            g = pos * 3
+            bl = 255 - pos * 3
+        else:
+            pos -= 170
+            r = pos * 3
+            g = 255 - pos * 3
+            bl = 0
+        r = (r * b) // 255
+        g = (g * b) // 255
+        bl = (bl * b) // 255
+        return (r, g, bl)
+
+    total_frames = 60
+    frames = []
+
+    for f in range(total_frames):
+        rows = []
+        if f < 30:
+            # Phase 1: Dual Level Meters + Dedicated Indicator Display
+            left_bars = int(abs(math.sin(f * 0.18)) * 3.99) + 1  # 1 to 4
+            right_bars = int(abs(math.cos(f * 0.16)) * 3.99) + 1 # 1 to 4
+            toggle_up = (f < 15)
+            toggle_down = (f >= 15)
+            btn3 = (10 <= f <= 14) or (25 <= f <= 29)
+
+            pulse = int(abs(math.sin(f * 0.3)) * 15 + 15)
+
+            for y in range(MATRIX_H):
+                row = []
+                row_from_bot = 3 - y
+                for x in range(MATRIX_W):
+                    if x in (0, 1):
+                        # Left Pot: Deep Green to Electric Cyan
+                        if row_from_bot < left_bars:
+                            row.append((0, 150 + row_from_bot * 25, row_from_bot * 65))
+                        else:
+                            row.append((0, 0, 0))
+                    elif x in (3, 4):
+                        # Right Fader: Warm Amber to Fiery Red
+                        if row_from_bot < right_bars:
+                            row.append((160 + row_from_bot * 25, (3 - row_from_bot) * 35, 0))
+                        else:
+                            row.append((0, 0, 0))
+                    else:
+                        # Center Column
+                        if y == 0:
+                            row.append((0, 255, 255) if toggle_up else (0, 18, 18))
+                        elif y == 3:
+                            row.append((255, 200, 0) if toggle_down else (22, 16, 0))
+                        else:
+                            if btn3:
+                                row.append((255, 255, 255) if y == 1 else (255, 0, 180))
+                            else:
+                                row.append((pulse, 0, pulse))
+                rows.append(row)
+        else:
+            # Phase 2: Toggle DOWN + Button 3 Pressed -> Full Matrix Beat-Synced Rainbow Wash
+            beat_phase = (f - 30) % 8
+            beat_decay = math.exp(-beat_phase * 0.45)
+            beat_bright = int(45 + 210 * beat_decay)
+            hue = int(((f - 30) / 30.0) * 255)
+            wash_color = wheel_rgb(hue, beat_bright)
+
+            for y in range(MATRIX_H):
+                rows.append([wash_color] * MATRIX_W)
+
+        frames.append(render_frame(rows))
+
+    return frames, 50
+
+RENDERERS["interface_test_akb20"] = interface_test_akb20_frames
 
 
 if __name__ == "__main__":

@@ -472,5 +472,26 @@
     "manual": "SPAGHETTI_MANUAL.md",
     "flash_bytes": 6196,
     "wav_bytes": 1332452
+  },
+  {
+    "id": "interface_test_akb20",
+    "source": "interface_test_AKB20.cpp",
+    "title": "ABK-20 Interface & Diagnostics",
+    "tagline": "Hardware diagnostics, visual meters & synthesizer test",
+    "description": "Comprehensive hardware diagnostics for the ABK-20 synthesizer: dual 4-level vertical LED level meters for rotary pot (smooth pitch sweep) and slide fader (triangle/saw/pulse timbre morphing), dedicated standby backlights for SPDT toggle (Major Acid Arpeggio / Bouncy Bunny Hop), Button 3 octave boost, and a full-matrix beat-synced rainbow wash.",
+    "tags": [
+      "test",
+      "diagnostics",
+      "hardware",
+      "abk-20",
+      "meters",
+      "synth",
+      "bunny",
+      "arpeggiator",
+      "rainbow"
+    ],
+    "manual": "INTERFACE_TEST_AKB20_MANUAL.md",
+    "flash_bytes": 3688,
+    "wav_bytes": 854660
   }
 ]
