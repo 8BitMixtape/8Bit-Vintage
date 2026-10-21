@@ -2271,7 +2271,8 @@ def synth_acid_akb20():
             bass_target_pitch = next_p
             bass_env = 255 if (accents[s_idx] or btn3) else 100
 
-        filter_mod = 60 + int(140 * (step / total_steps))
+        raw_p1 = int(255 * (step / total_steps))
+        filter_mod = (raw_p1 * raw_p1) >> 8
 
         for _ in range(samples_per_step):
             sample_idx += 1
@@ -2294,8 +2295,8 @@ def synth_acid_akb20():
             bass_phase = (bass_phase + (bass_pitch << 1)) & 0xFFFF
             raw_wave = (bass_phase >> 8) - 128
 
-            cutoff = filter_mod + (bass_env >> 1)
-            cutoff = max(10, min(200, cutoff))
+            env_mod = (bass_env * (filter_mod + 25)) >> 8
+            cutoff = max(4, min(215, filter_mod + env_mod))
 
             diff = raw_wave - filter_val
             drive = (diff * (cutoff >> 1)) / 128.0

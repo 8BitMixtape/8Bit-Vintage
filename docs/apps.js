@@ -510,8 +510,8 @@ window.APPS = [
       "303"
     ],
     "manual": "ACID_AKB20_MANUAL.md",
-    "flash_bytes": 4412,
-    "wav_bytes": 960836
+    "flash_bytes": 4436,
+    "wav_bytes": 974108
   }
 ]
 ;

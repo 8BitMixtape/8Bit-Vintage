@@ -113,9 +113,11 @@ ISR(TIMER1_OVF_vect) {
   bass_phase += (bass_pitch << 1); // DOUBLE PITCH increment since running half as fast!
   int16_t raw_wave = (bass_phase >> 8) - 128; // Sawtooth
   
-  int16_t cutoff = filter_mod + (bass_env >> 1);
-  if (cutoff < 10) cutoff = 10;
-  if (cutoff > 200) cutoff = 200;
+  // Filter Cutoff: scaled envelope modulation so low-end gets ultra dark & sub-heavy
+  int16_t env_mod = ((uint16_t)bass_env * (filter_mod + 25)) >> 8;
+  int16_t cutoff = filter_mod + env_mod;
+  if (cutoff < 4) cutoff = 4;
+  if (cutoff > 215) cutoff = 215;
   
   int16_t diff = raw_wave - filter_val;
   
@@ -283,8 +285,9 @@ void loop() {
     static uint8_t step = 0;
     
     // Read Potentiometers (calibrated for 4.7k series resistor)
-    uint8_t p1 = readRotary(POTI_LEFT);  // Filter cutoff: 0 (closed) to 255 (wide open)
-    filter_mod = p1;
+    uint8_t raw_p1 = readRotary(POTI_LEFT);  // 0 to 255
+    // Quadratic audio-taper curve: gives expansive, extreme low-end range
+    filter_mod = ((uint16_t)raw_p1 * raw_p1) >> 8;
     
     uint8_t p2 = readSlider(POTI_RIGHT); // Pattern mapping: 0 to 3
     uint8_t current_pattern = p2 >> 6; // 0 to 3
