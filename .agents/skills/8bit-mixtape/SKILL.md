@@ -154,3 +154,12 @@ output = (t >> 7 | t | t >> 6) * 10 + 4 * (t & t >> 13 | t >> 6);
 * **64 MHz PLL PWM**: Timer1 clocked from high-speed PLL generates analog output carrier far above human hearing (>250 kHz), resulting in clear audio with a single capacitor filter.
 * **Dual-Clock Interruption Handling**: NeoPixel data transmission demands strict cycle timing (~800 kHz) with zero interrupts. Audio interrupts are temporarily muted during `pixels.show()`, then re-enabled immediately to prevent audible pitch drift.
 * **PROGMEM Lookups**: Wavetables, note frequencies, and visual LED patterns are stored in Flash memory to preserve the tiny 512-byte SRAM.
+
+---
+
+## 8. Hardware & Analog Audio Best Practices (ABK-20)
+* **BTL Amplifier Isolation**: PAM8002 / 8002-family audio amps are Bridge-Tied Load (BTL). Both outputs (`OUT+` and `OUT-`) sit at $\approx V_{CC}/2$ DC ($\approx 2.5\text{V}$). The speaker must be wired strictly across Pin 5 and Pin 8 with **no connection to Ground**. Grounding either side short-circuits the BTL output, causing massive thermal dissipation and silence.
+* **Headphone Jack Auto-Shutdown (Candidate for PCB Revision v0.3+)**:
+  * In v0.2, PAM8002 Pin 1 (`SHT`) is hardwired to GND, pulling $4\text{–}6\text{ mA}$ quiescent idle current even when headphones are plugged in.
+  * In v0.3, the spare Ring switch on `Jack2` (PJ-317 Pins 3 & 5) paired with a $100\text{k}\Omega$ pull-up resistor to $V_{CC}$ enables **autonomous hardware auto-shutdown ($< 0.5\,\mu\text{A}$)** when a 3.5mm plug is inserted.
+  * Full specification, truth table, and bodge guide: [docs/AMP_AUTO_SHUTDOWN_CIRCUIT.md](file:///home/dusjagr/Documents/8bit_Mixtape/ABK-20/docs/AMP_AUTO_SHUTDOWN_CIRCUIT.md).
