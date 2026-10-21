@@ -2217,6 +2217,115 @@ def synth_interface_test_akb20():
     return samples, sample_rate
 
 
+# ---------------------------------------------------------------------------
+# 28. Acid ABK-20 Synthesizer (TB-303 + Octave Boost & Dual Tempo)
+# ---------------------------------------------------------------------------
+def synth_acid_akb20():
+    sample_rate = 15600
+    pitches = [137, 274, 137, 137, 274, 137, 205, 244, 137, 326, 137, 183, 274, 137, 326, 548]
+    slides  = [0,   1,   0,   0,   0,   0,   1,   0,   0,   1,   0,   0,   0,   0,   1,   0]
+    accents = [1,   0,   0,   1,   1,   0,   0,   1,   1,   0,   0,   1,   1,   0,   0,   1]
+    drums   = [1,   0,   2,   0,   1,   0,   2,   0,   1,   2,   2,   1,   1,   0,   2,   2]
+
+    total_steps = 32
+    samples = bytearray()
+
+    bass_phase = 0
+    bass_pitch = pitches[0]
+    bass_target_pitch = pitches[0]
+    bass_env = 0
+    filter_val = 0.0
+    filter_vel = 0.0
+
+    drum_phase = 0
+    drum_pitch = 0
+    drum_env = 0
+    drum_type = 0
+    lfsr = 0xACE1
+
+    sample_idx = 0
+    for step in range(total_steps):
+        s_idx = step % 16
+        # Tempo: Steps 0-23 classic 115ms (Toggle UP), steps 24-31 fast 90ms (Toggle DOWN)
+        step_dur = 0.090 if step >= 24 else 0.115
+        samples_per_step = int(sample_rate * step_dur)
+
+        d = drums[s_idx]
+        if d == 1:
+            drum_type = 0
+            drum_pitch = 1000
+            drum_env = 255
+        elif d == 2:
+            drum_type = 1
+            drum_env = 120
+
+        next_p = pitches[s_idx]
+        btn3 = (16 <= step < 24) # Button 3 held on steps 16-23 (+1 octave boost!)
+        if btn3:
+            next_p <<= 1
+
+        if slides[s_idx] or btn3:
+            bass_target_pitch = next_p
+        else:
+            bass_pitch = next_p
+            bass_target_pitch = next_p
+            bass_env = 255 if (accents[s_idx] or btn3) else 100
+
+        filter_mod = 60 + int(140 * (step / total_steps))
+
+        for _ in range(samples_per_step):
+            sample_idx += 1
+            if (sample_idx & 7) == 0:
+                if bass_env > 1: bass_env -= 2
+                else: bass_env = 0
+                if drum_type == 0:
+                    if drum_env > 0: drum_env -= 1
+                else:
+                    if drum_env > 7: drum_env -= 8
+                    else: drum_env = 0
+
+            if (sample_idx & 15) == 0:
+                if bass_pitch < bass_target_pitch: bass_pitch += 2
+                elif bass_pitch > bass_target_pitch: bass_pitch -= 2
+
+            if lfsr & 1: lfsr = (lfsr >> 1) ^ 0xB400
+            else: lfsr >>= 1
+
+            bass_phase = (bass_phase + (bass_pitch << 1)) & 0xFFFF
+            raw_wave = (bass_phase >> 8) - 128
+
+            cutoff = filter_mod + (bass_env >> 1)
+            cutoff = max(10, min(200, cutoff))
+
+            diff = raw_wave - filter_val
+            drive = (diff * (cutoff >> 1)) / 128.0
+            filter_vel += drive
+            filter_vel -= (filter_vel * 25.0) / 256.0
+            filter_val += filter_vel
+
+            filter_val = max(-300.0, min(300.0, filter_val))
+            outA = int(filter_val + 128.0)
+            outA = max(0, min(255, outA))
+
+            outB = 0
+            if drum_type == 0:
+                drum_phase = (drum_phase + (drum_pitch << 1)) & 0xFFFF
+                if drum_pitch > 30: drum_pitch -= 2
+                kw = drum_phase >> 8
+                if drum_phase & 0x8000: kw = 255 - kw
+                outB = (kw * drum_env) >> 8
+            else:
+                outB = ((lfsr & 0xFF) * drum_env) >> 8
+
+            sA = outA - 128
+            sB = outB
+            mixed = sA + sB
+            mixed = max(-128, min(127, mixed))
+            samples.append(mixed + 128)
+
+    return samples, sample_rate
+
+
 def main():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     synths = [
@@ -2247,6 +2356,7 @@ def main():
         ("theremin", synth_theremin),
         ("spaghetti", synth_spaghetti),
         ("interface_test_akb20", synth_interface_test_akb20),
+        ("acid_akb20", synth_acid_akb20),
     ]
 
     for name, fn in synths:

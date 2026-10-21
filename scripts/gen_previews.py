@@ -1390,6 +1390,70 @@ def interface_test_akb20_frames():
 RENDERERS["interface_test_akb20"] = interface_test_akb20_frames
 
 
+# ---------------------------------------------------------------------------
+# 25. acid_akb20 — Acid ABK-20 Synthesizer (TB-303 + Neon Acid Lime Strobe)
+# ---------------------------------------------------------------------------
+def acid_akb20_frames():
+    drum_seq = [1, 0, 2, 0, 1, 0, 2, 0, 1, 2, 2, 1, 1, 0, 2, 2] # 1=Kick, 2=Hat, 0=Rest
+    accents  = [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]
+    frames = []
+
+    total_steps = 24 # 48 frames (2 frames per step)
+    for s in range(total_steps):
+        step = s % 16
+        pattern = 0 if s < 16 else 1
+        indicator_y = pattern
+        btn3 = (8 <= s < 16) # Button 3 active on steps 8-15
+
+        d = drum_seq[step]
+        acc = accents[step]
+        bass_vis = 140 if acc else 70
+        drum_vis = 130 if d == 1 else (60 if d == 2 else 0)
+
+        # Hit frame
+        rows = []
+        for y in range(MATRIX_H):
+            row = []
+            for x in range(MATRIX_W):
+                if x == 4:
+                    row.append((255, 255, 255) if y == indicator_y else (25, 0, 0))
+                else:
+                    if btn3:
+                        # Neon Acid Lime Flash on Button 3!
+                        row.append((bass_vis, 255, bass_vis >> 1))
+                    else:
+                        r = min(255, bass_vis + drum_vis)
+                        g = drum_vis
+                        b = drum_vis
+                        row.append((r, g, b))
+            rows.append(row)
+        frames.append(render_frame(rows))
+
+        # Decay frame
+        bass_decay = bass_vis // 2
+        drum_decay = drum_vis // 4
+        rows_decay = []
+        for y in range(MATRIX_H):
+            row = []
+            for x in range(MATRIX_W):
+                if x == 4:
+                    row.append((255, 255, 255) if y == indicator_y else (25, 0, 0))
+                else:
+                    if btn3:
+                        row.append((bass_decay, 180, bass_decay >> 1))
+                    else:
+                        r = min(255, bass_decay + drum_decay)
+                        g = drum_decay
+                        b = drum_decay
+                        row.append((r, g, b))
+            rows_decay.append(row)
+        frames.append(render_frame(rows_decay))
+
+    return frames, 55
+
+RENDERERS["acid_akb20"] = acid_akb20_frames
+
+
 if __name__ == "__main__":
     main()
 

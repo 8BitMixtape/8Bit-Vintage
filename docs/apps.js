@@ -494,6 +494,24 @@ window.APPS = [
     "manual": "INTERFACE_TEST_AKB20_MANUAL.md",
     "flash_bytes": 3688,
     "wav_bytes": 854660
+  },
+  {
+    "id": "acid_akb20",
+    "source": "acid_AKB-20.cpp",
+    "title": "Acid ABK-20",
+    "tagline": "TB-303 acid bassline & dual-tempo drum synthesizer",
+    "description": "Hardware-calibrated 303 acid bassline & drum machine for the ABK-20. Left rotary pot modulates resonant filter cutoff, right slide fader selects patterns (Classic Acid, Arpeggio, G-Minor Groove, Octave Jumps). SPDT toggle sets classic (115ms) vs fast techno tempo (90ms). Button 3 triggers instant +1 octave scream and maximum resonance punch with neon acid lime strobe.",
+    "tags": [
+      "acid",
+      "tb-303",
+      "drums",
+      "sequencer",
+      "abk-20",
+      "303"
+    ],
+    "manual": "ACID_AKB20_MANUAL.md",
+    "flash_bytes": 4412,
+    "wav_bytes": 960836
   }
 ]
 ;
