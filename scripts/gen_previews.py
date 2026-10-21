@@ -1402,7 +1402,7 @@ def acid_akb20_frames():
     for s in range(total_steps):
         step = s % 16
         pattern = 0 if s < 16 else 1
-        indicator_y = pattern
+        indicator_row = 3 - pattern # Pattern 0 at bottom (y=3) to Pattern 3 at top (y=0)
         btn3 = (8 <= s < 16) # Button 3 active on steps 8-15
 
         d = drum_seq[step]
@@ -1416,7 +1416,7 @@ def acid_akb20_frames():
             row = []
             for x in range(MATRIX_W):
                 if x == 4:
-                    row.append((255, 255, 255) if y == indicator_y else (25, 0, 0))
+                    row.append((255, 255, 255) if y == indicator_row else (25, 0, 0))
                 else:
                     if btn3:
                         # Neon Acid Lime Flash on Button 3!
@@ -1437,7 +1437,7 @@ def acid_akb20_frames():
             row = []
             for x in range(MATRIX_W):
                 if x == 4:
-                    row.append((255, 255, 255) if y == indicator_y else (25, 0, 0))
+                    row.append((255, 255, 255) if y == indicator_row else (25, 0, 0))
                 else:
                     if btn3:
                         row.append((bass_decay, 180, bass_decay >> 1))

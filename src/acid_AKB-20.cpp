@@ -207,7 +207,9 @@ const uint8_t drum_seq[4][16] PROGMEM = {
 }; // 1 = Kick, 2 = Hat, 0 = Rest
 
 void drawIndicator(uint8_t indicator_y) {
-  const uint8_t rightColIndices[4] = {4, 9, 14, 19};
+  // Pattern indicator moves UP from bottom row to top row:
+  // Pattern 0 (bottom) -> Pixel 19, Pattern 3 (top) -> Pixel 4
+  const uint8_t rightColIndices[4] = {19, 14, 9, 4};
   for(uint8_t i=0; i<4; i++) {
     pixels.setPixelColor(rightColIndices[i], pixels.Color(20, 0, 0));
   }

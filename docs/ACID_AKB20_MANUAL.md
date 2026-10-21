@@ -26,10 +26,10 @@ A Roland TB-303 inspired acid bassline synthesizer and drum machine calibrated s
 ```
     Col 0   Col 1   Col 2   Col 3     Col 4 (Pattern Indicator)
   +-------+-------+-------+-------+-----------------------------+
-  |  (0)  |  (1)  |  (2)  |  (3)  |  (4) Pattern 0: Classic Acid |  Row 0
-  |  (5)  |  (6)  |  (7)  |  (8)  |  (9) Pattern 1: Arpeggio     |  Row 1
-  | (10)  | (11)  | (12)  | (13)  | (14) Pattern 2: G-Min Groove |  Row 2
-  | (15)  | (16)  | (17)  | (18)  | (19) Pattern 3: Octave Jumps |  Row 3
+  |  (0)  |  (1)  |  (2)  |  (3)  |  (4) Pattern 3: Octave Jumps |  Row 0 (Top)
+  |  (5)  |  (6)  |  (7)  |  (8)  |  (9) Pattern 2: G-Min Groove |  Row 1
+  | (10)  | (11)  | (12)  | (13)  | (14) Pattern 1: Arpeggio     |  Row 2
+  | (15)  | (16)  | (17)  | (18)  | (19) Pattern 0: Classic Acid |  Row 3 (Bottom)
   +-------+-------+-------+-------+-----------------------------+
               303 RHYTHM MATRIX              PATTERN METER
 ```

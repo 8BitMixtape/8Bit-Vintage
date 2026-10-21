@@ -190,24 +190,37 @@ const uint8_t drum_seq[4][16] PROGMEM = {
 }; // 1 = Kick, 2 = Hat, 0 = Rest
 
 void drawIndicator(uint8_t indicator_y) {
-  const uint8_t rightColIndices[4] = {4, 9, 14, 19};
+  // Pattern indicator moves UP from bottom row to top row:
+  // Pattern 0 (bottom) -> Pixel 19, Pattern 3 (top) -> Pixel 4
+  const uint8_t rightColIndices[4] = {19, 14, 9, 4};
   for(uint8_t i=0; i<4; i++) {
     pixels.setPixelColor(rightColIndices[i], pixels.Color(20, 0, 0));
   }
   pixels.setPixelColor(rightColIndices[indicator_y], pixels.Color(255, 255, 255));
 }
 
-// Helper function to read pots calibrated for 4.7k series resistor & inverted polarity:
-// 4.7k to VCC + 10k pot to GND limits raw ADC to ~0 (CW/up = max) - 696 (CCW/down = min).
-static inline uint8_t readPot(uint8_t pin) {
+// Rotary knob (POT2): CW (turn up) = GND (~0), CCW (turn down) = 4.7k (~670) -> Inverted
+static inline uint8_t readRotary(uint8_t pin) {
   int16_t raw = analogRead(pin);
-  const int16_t ADC_TOP = 670; // Margin at top end
-  const int16_t ADC_BOT = 15;  // Margin at bottom end
+  const int16_t ADC_TOP = 670;
+  const int16_t ADC_BOT = 15;
   if (raw > ADC_TOP) raw = ADC_TOP;
   if (raw < ADC_BOT) raw = ADC_BOT;
-  // Map raw: 670 (down/CCW) -> 0, 15 (up/CW) -> 255
-  uint16_t diff = ADC_TOP - raw; // 0 to 655
-  uint16_t val = (diff * 100) >> 8; // 0 to 255
+  uint16_t diff = ADC_TOP - raw;
+  uint16_t val = (diff * 100) >> 8;
+  if (val > 255) val = 255;
+  return (uint8_t)val;
+}
+
+// Slide fader (RV1): Slider UP = 4.7k (~670), Slider DOWN = GND (~0) -> Direct (non-inverted)
+static inline uint8_t readSlider(uint8_t pin) {
+  int16_t raw = analogRead(pin);
+  const int16_t ADC_TOP = 670;
+  const int16_t ADC_BOT = 15;
+  if (raw > ADC_TOP) raw = ADC_TOP;
+  if (raw < ADC_BOT) raw = ADC_BOT;
+  uint16_t diff = raw - ADC_BOT;
+  uint16_t val = (diff * 100) >> 8;
   if (val > 255) val = 255;
   return (uint8_t)val;
 }
@@ -221,10 +234,10 @@ void loop() {
     static uint8_t step = 0;
     
     // Read Potentiometers (calibrated for 4.7k series resistor)
-    uint8_t p1 = readPot(POTI_LEFT);  // Filter cutoff mapping (0-255)
+    uint8_t p1 = readRotary(POTI_LEFT);  // Filter cutoff mapping (0-255)
     filter_mod = p1; // Manual acid control!
     
-    uint8_t p2 = readPot(POTI_RIGHT); // Pattern mapping (0-255)
+    uint8_t p2 = readSlider(POTI_RIGHT); // Pattern mapping (0-255)
     uint8_t current_pattern = p2 >> 6; // 0 to 3
     if (current_pattern > 3) current_pattern = 3;
     int tempo_delay = 115; // Fixed tempo when changing patterns
@@ -267,8 +280,8 @@ void loop() {
     // Idle Mode!
     is_playing = 0;
     
-    uint8_t p1 = readPot(POTI_LEFT);  // 0-255
-    uint8_t p2 = readPot(POTI_RIGHT); // 0-255
+    uint8_t p1 = readRotary(POTI_LEFT);  // 0-255
+    uint8_t p2 = readSlider(POTI_RIGHT); // 0-255
     
     uint8_t val = (millis() / 20) % 255;
     if (val > 127) val = 255 - val; // 0 to 127
