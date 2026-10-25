@@ -150,12 +150,13 @@
 #include <avr/boot.h>
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
+#include <util/delay.h>
 
 // This value has to be adapted to the bootloader size
 // If you change this, please change BOOTLOADER_ADDRESS on Makefile too
 
 #ifndef BOOTLOADER_ADDRESS
-#define BOOTLOADER_ADDRESS     0x1BC0               // bootloader start address at 0x1BC0 = 7104
+#define BOOTLOADER_ADDRESS     0x1C00               // bootloader start address at 0x1C00 = 7168
 #endif
 
 //#define BOOTLOADER_ADDRESS     0x1800             // bootloader start address, e.g. 0x1800 = 6144, set .text to 0x0c00
@@ -327,8 +328,8 @@ uint8_t receiveFrame()
   //uint16_t store[16];
 
   uint16_t counter = 0;
-  volatile uint16_t time = 0;
-  volatile uint16_t delayTime;
+  uint16_t time = 0;
+  uint16_t delayTime;
   uint8_t p, t;
   uint8_t k = 8;
   uint8_t dataPointer = 0;
@@ -535,7 +536,7 @@ void resetRegister()
 
 void exitBootloader()
 {  
-  memcpy_P (&start_appl_main, (PGM_P) BOOTLOADER_FUNC_ADDRESS, sizeof (start_appl_main));
+  start_appl_main = (void (*)(void)) pgm_read_word(BOOTLOADER_FUNC_ADDRESS);
 
   if (start_appl_main && (uint16_t)start_appl_main != 0xFFFF)
   {
@@ -557,7 +558,8 @@ void runProgramm(void)
 // Skipper button check on PB3 analog ladder
 static inline void checkBootloaderSkip(void)
 {
-  for (volatile uint8_t d = 0; d < 255; d++); // Voltage settling
+  // Power settling delay (~20ms @ 16MHz) for VCC rail and 100nF C1 capacitor
+  _delay_ms(20);
 
   // ADC3 on PB3, VCC reference, Left-adjust result (8-bit reading in ADCH)
   ADMUX = (1 << ADLAR) | (1 << MUX1) | (1 << MUX0);
@@ -567,13 +569,32 @@ static inline void checkBootloaderSkip(void)
   ADCSRA |= (1 << ADSC);        // start 2nd conversion
   while (ADCSRA & (1 << ADSC)); // wait for 2nd conversion
   uint8_t val = ADCH;
-  ADCSRA = 0;                   // disable ADC to save power
 
-  // Calibrated threshold: ~1.14 V (ADCH = 58)
-  // If val > 58: Button SW2 is NOT pressed -> skip bootloader and immediately run user sketch!
-  if (val > 58) {
+  // Calibrated threshold: ~1.18 V (ADCH = 60)
+  // SW2 pressed: 0.99 V -> ADCH ~51 (solo), 0.82 V -> ADCH ~42, 0.70 V -> ADCH ~36
+  // Toggle 2 (UP) alone: 1.29 V -> ADCH ~66
+  // Toggle 1 (DOWN) alone: 1.72 V -> ADCH ~88
+  // Idle (no button): 2.63 V -> ADCH ~134
+  //
+  // If val > 60: Button SW2 is NOT pressed -> skip bootloader and immediately run user sketch!
+  if (val > 60) {
+    ADCSRA = 0; // disable ADC
     exitBootloader();
   }
+
+  // Visual confirmation: SW2 hold detected, turn RED LED on while waiting for release
+  LED_RED();
+
+  // Wait until user releases SW2 using ADC (voltage rises above 1.18V)
+  do {
+    ADCSRA |= (1 << ADSC);
+    while (ADCSRA & (1 << ADSC));
+  } while (ADCH <= 60);
+
+  // Button released: debounce delay (~20ms @ 16MHz) to let PB3 ladder settle cleanly
+  _delay_ms(20);
+
+  ADCSRA = 0; // disable ADC to save power & restore PB3 for audio
 }
 
 //***************************************************************************************
@@ -584,10 +605,6 @@ static inline void a_main()
   uint8_t p;
   uint16_t time = WAITBLINKTIME;
   uint8_t timeout = BOOT_TIMEOUT;
-
-  for (volatile uint8_t d = 0; d < 255; d++);
-  while ((PINB & (1 << PB3)) == 0);
-  for (volatile uint8_t d = 0; d < 255; d++);
 
   p = PINVALUE;
 

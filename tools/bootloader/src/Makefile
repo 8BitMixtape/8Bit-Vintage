@@ -4,7 +4,7 @@
 
 F_CPU = 16000000
 DEVICE = attiny85
-BOOTLOADER_ADDRESS = 0x1BC0
+BOOTLOADER_ADDRESS = 0x1C00
 
 # Path to avr-gcc: check ~/.platformio if not in system PATH
 AVR_GCC := $(shell which avr-gcc 2>/dev/null || echo /home/dusjagr/.platformio/packages/toolchain-atmelavr/bin/avr-gcc)
