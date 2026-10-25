@@ -297,9 +297,14 @@ static inline void checkBootloaderSkip(void)
   // Button SW2 + Toggle 1 (DOWN)    = 0.82 V -> ADCH ~42 (enters bootloader)
   // Button SW2 + Toggle 2 (UP)      = 0.70 V -> ADCH ~36 (enters bootloader)
   //
-  // Calibrated threshold: 1.10 V (ADCH = 56)
-  // If val > 56: Button SW2 is NOT pressed -> skip bootloader and immediately run user sketch!
-  if (val > 56) {
+  // Calibrated threshold: ~1.14 V (ADCH = 58)
+  // SW2 pressed: 0.99 V -> ADCH ~51 (solo), 0.82 V -> ADCH ~42, 0.70 V -> ADCH ~36
+  // Toggle 2 (UP) alone: 1.29 V -> ADCH ~66
+  // Toggle 1 (DOWN) alone: 1.72 V -> ADCH ~88
+  // Idle (no button): 2.63 V -> ADCH ~134
+  //
+  // If val > 58: Button SW2 is NOT pressed -> skip bootloader and immediately run user sketch!
+  if (val > 58) {
     exitBootloader();
   }
 }
@@ -309,12 +314,6 @@ static inline void a_main(void)
   uint8_t p;
   uint16_t time = WAITBLINKTIME;
   uint8_t timeout = BOOT_TIMEOUT;
-
-  // Wait if SW2 is still held down during power-on, so button release bounce
-  // does not accidentally trigger audio frames!
-  _delay_ms(20);
-  while ((PINB & (1 << PB3)) == 0);
-  _delay_ms(20);
 
   p = PINVALUE;
   uint8_t exitcounter = 3;
