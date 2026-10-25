@@ -22,9 +22,11 @@
      5. SW2 + Toggle 1:                   0.82 V  -> ADC ~168 (ADCH ~42)
      6. SW2 + Toggle 2:                   0.70 V  -> ADC ~143 (ADCH ~36)
 
-   Potentiometers (Rev 0.3 Routing):
-     - Rotary Pot (PB4 / A2):  CCW (bottom) = GND (~0), CW (top) = 5V (~1023)
-     - Slide Fader (PB2 / A1): Bottom = GND (~0), Top = 5V (~1023)
+   Potentiometers (Rev 0.3 Routing & Measured Voltages @ VCC = 5.0V):
+     - Voltage range: 0.00 V (bottom / CCW) to 3.58 V (top / CW)
+     - ADC range (10-bit): ~0 (0.00V) to ~732 (3.58V)
+     - Rotary Pot (PB4 / A2):  CCW (bottom) = 0.00V (~0), CW (top) = 3.58V (~732)
+     - Slide Fader (PB2 / A1): Bottom = 0.00V (~0), Top = 3.58V (~732)
    ======================================================================================= */
 
 // --- Physical Pin Assignments ---
@@ -35,6 +37,11 @@
 #define PIN_POTI_ADC     A2  // PB4: Rotary Pot (POT2)
 
 #define NUM_MATRIX_LEDS  20  // 5 columns x 4 rows matrix
+
+// --- Potentiometer Hardware Calibration ---
+// Physical wiper voltage swing: 0.00V to 3.58V (3.58V / 5.0V * 1023 ~= 732)
+#define ABK_POT_ADC_BOT  10   // Noise / ground margin to ensure clean zero
+#define ABK_POT_ADC_TOP  725  // Calibrated top threshold (~3.54V to ensure 255 is reached)
 
 // --- PB3 Switch Ladder States ---
 enum LadderState : uint8_t {
@@ -96,28 +103,23 @@ static inline uint8_t getTogglePosition(LadderState state) {
 }
 
 // --- Potentiometers Reading (Rev 0.3: 0 at GND/bottom, 255 at Top/CW) ---
-// Note: ABK-20 hardware features a 4.7k series resistor to VCC on POT2 and RV1.
-// Therefore, the raw ADC range is approximately 15 (bottom/GND) to ~670 (top/4.7k divider).
+// Scaled 0..255 using measured voltage swing (0.00V to 3.58V)
 
 // Reads Rotary Pot (PB4 / A2) returning scaled 0..255 (Turning CW increases)
 static inline uint8_t readRotaryPot() {
   int16_t raw = analogRead(PIN_POTI_ADC);
-  const int16_t ADC_BOT = 15;
-  const int16_t ADC_TOP = 665; // Calibrated for 4.7k series resistor divider
-  if (raw < ADC_BOT) raw = ADC_BOT;
-  if (raw > ADC_TOP) raw = ADC_TOP;
-  uint32_t val = (uint32_t)(raw - ADC_BOT) * 255 / (ADC_TOP - ADC_BOT);
+  if (raw < ABK_POT_ADC_BOT) raw = ABK_POT_ADC_BOT;
+  if (raw > ABK_POT_ADC_TOP) raw = ABK_POT_ADC_TOP;
+  uint32_t val = (uint32_t)(raw - ABK_POT_ADC_BOT) * 255 / (ABK_POT_ADC_TOP - ABK_POT_ADC_BOT);
   return (uint8_t)(val > 255 ? 255 : val);
 }
 
 // Reads Slide Fader (PB2 / A1) returning scaled 0..255 (Sliding UP increases)
 static inline uint8_t readSlideFader() {
   int16_t raw = analogRead(PIN_FADER_ADC);
-  const int16_t ADC_BOT = 15;
-  const int16_t ADC_TOP = 665; // Calibrated for 4.7k series resistor divider
-  if (raw < ADC_BOT) raw = ADC_BOT;
-  if (raw > ADC_TOP) raw = ADC_TOP;
-  uint32_t val = (uint32_t)(raw - ADC_BOT) * 255 / (ADC_TOP - ADC_BOT);
+  if (raw < ABK_POT_ADC_BOT) raw = ABK_POT_ADC_BOT;
+  if (raw > ABK_POT_ADC_TOP) raw = ABK_POT_ADC_TOP;
+  uint32_t val = (uint32_t)(raw - ABK_POT_ADC_BOT) * 255 / (ABK_POT_ADC_TOP - ABK_POT_ADC_BOT);
   return (uint8_t)(val > 255 ? 255 : val);
 }
 
