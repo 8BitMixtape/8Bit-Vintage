@@ -305,8 +305,20 @@ static inline void checkBootloaderSkip(void)
   //
   // If val > 58: Button SW2 is NOT pressed -> skip bootloader and immediately run user sketch!
   if (val > 58) {
+    ADCSRA = 0; // disable ADC to save power
     exitBootloader();
   }
+
+  // SW2 was held down -> Enter Bootloader!
+  // Wait until SW2 is released via ADC so mechanical contact bounce and
+  // 100nF AC capacitor discharge do NOT falsely trigger audio edge detection!
+  do {
+    ADCSRA |= (1 << ADSC);
+    while (ADCSRA & (1 << ADSC));
+  } while (ADCH <= 58);
+
+  ADCSRA = 0;     // disable ADC to save power
+  _delay_ms(100); // Wait 100ms for ladder DC voltage to fully stabilize
 }
 
 static inline void a_main(void)
