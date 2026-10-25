@@ -29,11 +29,11 @@
 #include <avr/eeprom.h>
 #include <util/delay.h>
 
-#define BOOT_TIMEOUT 120
-#define WAITBLINKTIME 1500
+#define BOOT_TIMEOUT 10
+#define WAITBLINKTIME 10000
 
 #ifndef BOOTLOADER_ADDRESS
-#define BOOTLOADER_ADDRESS 0x1C00
+#define BOOTLOADER_ADDRESS 0x1BC0
 #endif
 
 #define RJMP (0xC000U - 1)
@@ -305,20 +305,8 @@ static inline void checkBootloaderSkip(void)
   //
   // If val > 58: Button SW2 is NOT pressed -> skip bootloader and immediately run user sketch!
   if (val > 58) {
-    ADCSRA = 0; // disable ADC to save power
     exitBootloader();
   }
-
-  // SW2 was held down -> Enter Bootloader!
-  // Wait until SW2 is released via ADC so mechanical contact bounce and
-  // 100nF AC capacitor discharge do NOT falsely trigger audio edge detection!
-  do {
-    ADCSRA |= (1 << ADSC);
-    while (ADCSRA & (1 << ADSC));
-  } while (ADCH <= 58);
-
-  ADCSRA = 0;     // disable ADC to save power
-  _delay_ms(100); // Wait 100ms for ladder DC voltage to fully stabilize
 }
 
 static inline void a_main(void)
@@ -326,6 +314,12 @@ static inline void a_main(void)
   uint8_t p;
   uint16_t time = WAITBLINKTIME;
   uint8_t timeout = BOOT_TIMEOUT;
+
+  // Wait if SW2 is still held down during power-on, so button release bounce
+  // does not accidentally trigger audio frames!
+  _delay_ms(20);
+  while ((PINB & (1 << PB3)) == 0);
+  _delay_ms(20);
 
   p = PINVALUE;
   uint8_t exitcounter = 3;
