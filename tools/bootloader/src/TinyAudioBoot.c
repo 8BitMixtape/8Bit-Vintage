@@ -203,9 +203,9 @@ uint16_t resetVector RESET_SECTION = RJMP + BOOTLOADER_ADDRESS / 2;
 #define TOGGLE_GREEN() do { PORTB &= ~(1 << PB0); PORTB ^= (1 << PB1); } while(0)
 #define TOGGLE_RED()   do { PORTB &= ~(1 << PB1); PORTB ^= (1 << PB0); } while(0)
 
-#define LEDON      LED_GREEN()
+#define LEDON      LED_RED()
 #define LEDOFF     LED_OFF()
-#define TOGGLELED  TOGGLE_GREEN()
+#define TOGGLELED  TOGGLE_RED()
 
 #else
 

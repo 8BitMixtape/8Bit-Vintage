@@ -96,12 +96,14 @@ static inline uint8_t getTogglePosition(LadderState state) {
 }
 
 // --- Potentiometers Reading (Rev 0.3: 0 at GND/bottom, 255 at Top/CW) ---
+// Note: ABK-20 hardware features a 4.7k series resistor to VCC on POT2 and RV1.
+// Therefore, the raw ADC range is approximately 15 (bottom/GND) to ~670 (top/4.7k divider).
 
 // Reads Rotary Pot (PB4 / A2) returning scaled 0..255 (Turning CW increases)
 static inline uint8_t readRotaryPot() {
   int16_t raw = analogRead(PIN_POTI_ADC);
   const int16_t ADC_BOT = 15;
-  const int16_t ADC_TOP = 1000;
+  const int16_t ADC_TOP = 665; // Calibrated for 4.7k series resistor divider
   if (raw < ADC_BOT) raw = ADC_BOT;
   if (raw > ADC_TOP) raw = ADC_TOP;
   uint32_t val = (uint32_t)(raw - ADC_BOT) * 255 / (ADC_TOP - ADC_BOT);
@@ -112,7 +114,7 @@ static inline uint8_t readRotaryPot() {
 static inline uint8_t readSlideFader() {
   int16_t raw = analogRead(PIN_FADER_ADC);
   const int16_t ADC_BOT = 15;
-  const int16_t ADC_TOP = 1000;
+  const int16_t ADC_TOP = 665; // Calibrated for 4.7k series resistor divider
   if (raw < ADC_BOT) raw = ADC_BOT;
   if (raw > ADC_TOP) raw = ADC_TOP;
   uint32_t val = (uint32_t)(raw - ADC_BOT) * 255 / (ADC_TOP - ADC_BOT);
@@ -134,3 +136,4 @@ static inline void abkLedOff() {
 }
 
 #endif // ABK20_HARDWARE_H
+

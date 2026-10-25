@@ -233,6 +233,7 @@ void loop() {
 
     // Left Pot Bar Graph (Columns 0 & 1): 4 vertical steps
     uint8_t left_bars = (left_pot + 25) / 55; // 0 to 4
+    if (left_bars > 4) left_bars = 4;
     for (uint8_t y = 0; y < 4; y++) {
       uint8_t row_from_bot = 3 - y;
       if (row_from_bot < left_bars) {
@@ -245,6 +246,7 @@ void loop() {
 
     // Right Fader Bar Graph (Columns 3 & 4): 4 vertical steps
     uint8_t right_bars = (right_pot + 25) / 55; // 0 to 4
+    if (right_bars > 4) right_bars = 4;
     for (uint8_t y = 0; y < 4; y++) {
       uint8_t row_from_bot = 3 - y;
       if (row_from_bot < right_bars) {
