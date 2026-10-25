@@ -29,7 +29,7 @@
 #include <avr/eeprom.h>
 #include <util/delay.h>
 
-#define BOOT_TIMEOUT 20
+#define BOOT_TIMEOUT 120
 #define WAITBLINKTIME 1500
 
 #ifndef BOOTLOADER_ADDRESS
@@ -288,6 +288,8 @@ void runProgramm(void)
 // Skipper button check on PB3 analog ladder
 static inline void checkBootloaderSkip(void)
 {
+  _delay_ms(20); // Power-on voltage settling
+
   // ADC3 on PB3, VCC reference, Left-adjust result (8-bit reading in ADCH)
   ADMUX = (1 << ADLAR) | (1 << MUX1) | (1 << MUX0);
   // Enable ADC, start first warm-up conversion, prescaler 64 (~250kHz @ 16MHz)
@@ -299,10 +301,11 @@ static inline void checkBootloaderSkip(void)
   ADCSRA = 0;                   // disable ADC to save power
 
   // On ABK-20 ladder:
-  // Idle = ~134, Toggle SW1 Down = ~89, Toggle SW1 Up = ~69
-  // Button SW2 Solo = ~51, Button SW2 + SW1 = ~38
-  // If val > 60: Button SW2 is NOT held down -> immediately start user synth!
-  if (val > 60) {
+  // Idle (no button) = ~128
+  // Toggle Switch SW1 = ~104
+  // Button SW2 pressed = ~74 (or ~65 with toggle)
+  // If val > 88: Button SW2 is NOT held down -> immediately start user synth!
+  if (val > 88) {
     exitBootloader();
   }
 }
@@ -312,6 +315,12 @@ static inline void a_main(void)
   uint8_t p;
   uint16_t time = WAITBLINKTIME;
   uint8_t timeout = BOOT_TIMEOUT;
+
+  // Wait if SW2 is still held down during power-on, so button release bounce
+  // does not accidentally trigger audio frames!
+  _delay_ms(20);
+  while ((PINB & (1 << PB3)) == 0);
+  _delay_ms(20);
 
   p = PINVALUE;
   uint8_t exitcounter = 3;
