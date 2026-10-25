@@ -22,13 +22,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def record_audio(output_wav: Path, duration_sec: float = 2.0, sample_rate: int = 4000):
+def record_audio(output_wav: Path, duration_sec: float = 2.0, sample_rate: int = 4000, wait_enter: bool = True):
     """Record mono 8-bit unsigned audio from microphone using ALSA arecord."""
     print("\n" + "=" * 50)
     print("🎙️   8BIT MIXTAPE — VOICE & SAMPLE RECORDER   🎙️")
     print("=" * 50)
     print(f"Target duration: {duration_sec}s @ {sample_rate} Hz (8-bit mono)")
-    input("\n👉 Press ENTER when ready to record...")
+    if wait_enter:
+        try:
+            input("\n👉 Press ENTER when ready to record...")
+        except EOFError:
+            pass
 
     for i in range(3, 0, -1):
         print(f"Recording in {i}...")
@@ -138,10 +142,11 @@ def main():
     parser.add_argument("-l", "--length", type=int, default=2700, help="Target byte length (default: 2700, fits TinyAudioBoot)")
     parser.add_argument("-r", "--rate", type=int, default=3600, help="Recording sample rate in Hz (default: 3600)")
     parser.add_argument("--wav", type=Path, default=Path("/tmp/speech_record.wav"), help="Intermediate WAV file")
+    parser.add_argument("--no-wait", action="store_true", help="Start 3-second countdown immediately without waiting for ENTER key")
 
     args = parser.parse_args()
 
-    record_audio(args.wav, duration_sec=args.duration, sample_rate=args.rate)
+    record_audio(args.wav, duration_sec=args.duration, sample_rate=args.rate, wait_enter=not args.no_wait)
     process_wav_to_header(args.wav, args.output, target_len=args.length)
 
 
