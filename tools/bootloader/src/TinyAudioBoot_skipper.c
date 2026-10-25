@@ -33,7 +33,7 @@
 #define WAITBLINKTIME 1500
 
 #ifndef BOOTLOADER_ADDRESS
-#define BOOTLOADER_ADDRESS 0x1BC0
+#define BOOTLOADER_ADDRESS 0x1C00
 #endif
 
 #define RJMP (0xC000U - 1)
@@ -302,10 +302,11 @@ static inline void checkBootloaderSkip(void)
 
   // On ABK-20 ladder:
   // Idle (no button) = ~128
-  // Toggle Switch SW1 = ~104
-  // Button SW2 pressed = ~74 (or ~65 with toggle)
-  // If val > 88: Button SW2 is NOT held down -> immediately start user synth!
-  if (val > 88) {
+  // Toggle Switch SW1 DOWN = ~104
+  // Button SW2 pressed = ~74 (enters bootloader)
+  // Toggle Switch SW1 UP = ~69 (enters bootloader)
+  // If val > 78: skip bootloader and immediately start user synth!
+  if (val > 78) {
     exitBootloader();
   }
 }

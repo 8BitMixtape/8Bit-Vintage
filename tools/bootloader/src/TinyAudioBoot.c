@@ -154,7 +154,9 @@
 // This value has to be adapted to the bootloader size
 // If you change this, please change BOOTLOADER_ADDRESS on Makefile too
 
-#define BOOTLOADER_ADDRESS     0x1BC0               // bootloader start address, e.g. 0x1C00 = 7168, set .text to 0x0E00
+#ifndef BOOTLOADER_ADDRESS
+#define BOOTLOADER_ADDRESS     0x1C00               // bootloader start address at 0x1C00 = 7168
+#endif
 
 //#define BOOTLOADER_ADDRESS     0x1800             // bootloader start address, e.g. 0x1800 = 6144, set .text to 0x0c00
 
@@ -190,21 +192,28 @@ uint16_t resetVector RESET_SECTION = RJMP + BOOTLOADER_ADDRESS / 2;
 #define USELED
 #ifdef USELED
 
-	#define LEDPORT    ( 1<<PB1 ); //PB1 pin 6 Attiny85
-	#define INITLED    { DDRB|=LEDPORT; }
+#define INITLED do { \
+    DDRB |= (1 << PB0) | (1 << PB1); \
+    PORTB &= ~((1 << PB0) | (1 << PB1)); \
+} while(0)
 
-	#define LEDON      { PORTB|=LEDPORT;}
-	#define LEDOFF     { PORTB&=~LEDPORT;}
-	#define TOGGLELED  { PORTB^=LEDPORT;}
+#define LED_GREEN()    do { PORTB = (PORTB & ~(1 << PB0)) | (1 << PB1); } while(0)
+#define LED_RED()      do { PORTB = (PORTB & ~(1 << PB1)) | (1 << PB0); } while(0)
+#define LED_OFF()      do { PORTB &= ~((1 << PB0) | (1 << PB1)); } while(0)
+#define TOGGLE_GREEN() do { PORTB &= ~(1 << PB0); PORTB ^= (1 << PB1); } while(0)
+#define TOGGLE_RED()   do { PORTB &= ~(1 << PB1); PORTB ^= (1 << PB0); } while(0)
+
+#define LEDON      LED_GREEN()
+#define LEDOFF     LED_OFF()
+#define TOGGLELED  TOGGLE_GREEN()
 
 #else
 
-	#define LEDPORT 
-	#define INITLED 
-
-	#define LEDON 
-	#define LEDOFF 
-	#define TOGGLELED 
+#define LEDPORT 
+#define INITLED 
+#define LEDON 
+#define LEDOFF 
+#define TOGGLELED 
 
 #endif
 
@@ -265,14 +274,23 @@ void (*start_appl_main) (void);
 
 #define BOOTLOADER_FUNC_ADDRESS (BOOTLOADER_STARTADDRESS - sizeof (start_appl_main))
 
+#ifndef sei
 #define sei() asm volatile("sei")
+#endif
+#ifndef cli
 #define cli() asm volatile("cli")
+#endif
+#ifndef nop
 #define nop() asm volatile("nop")
+#endif
+#ifndef wdr
 #define wdr() asm volatile("wdr")
+#endif
 
 //AVR ATtiny85 Programming: EEPROM Reading and Writing - YouTube
 //https://www.youtube.com/watch?v=DO-D6YmRpJk
 
+#if 0
 void eeprom_write(unsigned short address, unsigned char data)
 {
    while(EECR & (1<<EEPE));
@@ -291,6 +309,7 @@ void eeprom_write(unsigned short address, unsigned char data)
    EECR |= (1<<EEMPE);
    EECR |= (1<<EEPE);  
 }
+#endif
 
 //***************************************************************************************
 // receiveFrame()
@@ -582,7 +601,7 @@ static inline void a_main()
   {
     if (!receiveFrame())
     {
-      //*****  if data transfer error: blink fast, press reset to restart *******************
+      //*****  if data transfer error: blink fast in RED, press reset to restart *******************
 
       while (1)
       {
@@ -592,7 +611,7 @@ static inline void a_main()
           time--;
           if (time == 0)
           {
-            TOGGLELED;
+            TOGGLE_RED();
             time = 1000;
           }
         }
@@ -611,13 +630,22 @@ static inline void a_main()
             if( address < BOOTLOADER_ADDRESS) // prevent bootloader form self killing
         		{
         			boot_program_page (address, FrameData + DATAPAGESTART);  // erase and program page
-        			TOGGLELED;
+        			
+              // Visual progress: Green -> Amber -> Red
+              if (pageNumber < 8) {
+                if (pageNumber & 1) { LED_GREEN(); } else { LED_OFF(); }
+              } else if (pageNumber < 20) {
+                if (pageNumber & 1) { LED_RED(); } else { LED_GREEN(); }
+              } else {
+                if (pageNumber & 1) { LED_RED(); } else { LED_OFF(); }
+              }
         		}
         }
         break;
 
         case RUNCOMMAND:
         {
+            LED_OFF();
             // after programming leave bootloader and run program
             runProgramm();
         }
@@ -630,6 +658,7 @@ static inline void a_main()
         // }
         // break;
 
+#if 0
         case EEPROMCOMMAND:
         {
             uint8_t pageNumber = FrameData[PAGEINDEXLOW];
@@ -653,6 +682,7 @@ static inline void a_main()
 
         }
         break;
+#endif
       }
       FrameData[COMMAND] = NOCOMMAND; // delete command
     }

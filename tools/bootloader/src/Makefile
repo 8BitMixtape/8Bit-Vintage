@@ -4,7 +4,7 @@
 
 F_CPU = 16000000
 DEVICE = attiny85
-BOOTLOADER_ADDRESS = 0x1BC0
+BOOTLOADER_ADDRESS = 0x1C00
 
 # Path to avr-gcc: check ~/.platformio if not in system PATH
 AVR_GCC := $(shell which avr-gcc 2>/dev/null || echo /home/dusjagr/.platformio/packages/toolchain-atmelavr/bin/avr-gcc)
@@ -34,10 +34,20 @@ LDFLAGS = -mmcu=$(DEVICE) -Wl,--gc-sections -Wl,--relax \
 
 HEXDIR = ../hex
 
-TARGETS = $(HEXDIR)/TinyAudioBoot_Skipper_AudioPB3_LedPB1.hex \
+TARGETS = $(HEXDIR)/TinyAudioBoot_Standard_AudioPB3_LedPB1.hex \
+          $(HEXDIR)/TinyAudioBoot_Skipper_AudioPB3_LedPB1.hex \
           $(HEXDIR)/TinyAudioBoot_Skipper_AudioPB3_LedPB0.hex
 
 all: $(TARGETS)
+
+$(HEXDIR)/TinyAudioBoot_Standard_AudioPB3_LedPB1.hex: TinyAudioBoot.c
+	@mkdir -p $(HEXDIR)
+	$(AVR_GCC) $(CFLAGS) -DLED_PIN=PB1 -c $< -o standard_pb1.o
+	$(AVR_GCC) $(LDFLAGS) standard_pb1.o -o standard_pb1.elf
+	$(AVR_OBJCOPY) -j .text -j .data -j .bootreset -O ihex standard_pb1.elf $@
+	@echo "--- Size of Standard (LED PB1) ---"
+	$(AVR_SIZE) standard_pb1.elf
+	@rm -f standard_pb1.o standard_pb1.elf
 
 $(HEXDIR)/TinyAudioBoot_Skipper_AudioPB3_LedPB1.hex: TinyAudioBoot_skipper.c
 	@mkdir -p $(HEXDIR)
