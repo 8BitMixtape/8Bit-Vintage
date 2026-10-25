@@ -631,13 +631,11 @@ static inline void a_main()
         		{
         			boot_program_page (address, FrameData + DATAPAGESTART);  // erase and program page
         			
-              // Visual progress: Green -> Amber -> Red
-              if (pageNumber < 8) {
-                if (pageNumber & 1) { LED_GREEN(); } else { LED_OFF(); }
-              } else if (pageNumber < 20) {
-                if (pageNumber & 1) { LED_RED(); } else { LED_GREEN(); }
+              // While programming: always alternate Green and Red on every page!
+              if (pageNumber & 1) {
+                LED_RED();
               } else {
-                if (pageNumber & 1) { LED_RED(); } else { LED_OFF(); }
+                LED_GREEN();
               }
         		}
         }

@@ -42,32 +42,21 @@
 uint16_t resetVector RESET_SECTION = RJMP + BOOTLOADER_ADDRESS / 2;
 
 // LED Configuration
-// On ABK-20, the KS01 button bi-directional LED is wired between PB0 and PB1.
-// By defaulting LED_PIN to PB0 and grounding PB1 (0V), the speaker is completely
-// silent during bootloader wait/upload, and the button LED blinks clearly!
-#ifndef LED_PIN
-#define LED_PIN PB0
-#endif
+// Multi-color LED configuration for ABK-20 KS01 bi-directional LED (PB1 <-> PB0)
+#define INITLED do { \
+    DDRB |= (1 << PB0) | (1 << PB1); \
+    PORTB &= ~((1 << PB0) | (1 << PB1)); \
+} while(0)
 
-#if (LED_PIN == PB0)
-#define LEDPORT (1 << PB0)
-#define INITLED { \
-    DDRB |= (1 << PB0) | (1 << PB1); \
-    PORTB &= ~((1 << PB0) | (1 << PB1)); \
-}
-#define LEDON     { PORTB |= (1 << PB0); }
-#define LEDOFF    { PORTB &= ~(1 << PB0); }
-#define TOGGLELED { PORTB ^= (1 << PB0); }
-#else
-#define LEDPORT (1 << PB1)
-#define INITLED { \
-    DDRB |= (1 << PB0) | (1 << PB1); \
-    PORTB &= ~((1 << PB0) | (1 << PB1)); \
-}
-#define LEDON     { PORTB |= (1 << PB1); }
-#define LEDOFF    { PORTB &= ~(1 << PB1); }
-#define TOGGLELED { PORTB ^= (1 << PB1); }
-#endif
+#define LED_GREEN()    do { PORTB = (PORTB & ~(1 << PB0)) | (1 << PB1); } while(0)
+#define LED_RED()      do { PORTB = (PORTB & ~(1 << PB1)) | (1 << PB0); } while(0)
+#define LED_OFF()      do { PORTB &= ~((1 << PB0) | (1 << PB1)); } while(0)
+#define TOGGLE_GREEN() do { PORTB &= ~(1 << PB0); PORTB ^= (1 << PB1); } while(0)
+#define TOGGLE_RED()   do { PORTB &= ~(1 << PB1); PORTB ^= (1 << PB0); } while(0)
+
+#define LEDON      LED_GREEN()
+#define LEDOFF     LED_OFF()
+#define TOGGLELED  TOGGLE_GREEN()
 
 #define INITDEBUGPIN
 #define DEBUGPINON
@@ -355,7 +344,7 @@ static inline void a_main(void)
           TIMER = 0;
           time--;
           if (time == 0) {
-            TOGGLELED;
+            TOGGLE_RED();
             time = 1000;
           }
         }
@@ -367,11 +356,16 @@ static inline void a_main(void)
           uint16_t address = SPM_PAGESIZE * pageNumber;
           if (address < BOOTLOADER_ADDRESS) {
             boot_program_page(address, FrameData + DATAPAGESTART);
-            TOGGLELED;
+            if (pageNumber & 1) {
+              LED_RED();
+            } else {
+              LED_GREEN();
+            }
           }
           break;
         }
         case RUNCOMMAND: {
+          LED_OFF();
           runProgramm();
           break;
         }
