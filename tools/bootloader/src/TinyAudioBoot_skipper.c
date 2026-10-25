@@ -289,13 +289,17 @@ static inline void checkBootloaderSkip(void)
   uint8_t val = ADCH;
   ADCSRA = 0;                   // disable ADC to save power
 
-  // On ABK-20 ladder:
-  // Idle (no button) = ~128
-  // Toggle Switch SW1 DOWN = ~104
-  // Button SW2 pressed = ~74 (enters bootloader)
-  // Toggle Switch SW1 UP = ~69 (enters bootloader)
-  // If val > 78: skip bootloader and immediately start user synth!
-  if (val > 78) {
+  // On ABK-20 ladder (@ 5.0V VCC):
+  // Idle (Center toggle, no button) = 2.63 V -> ADCH ~134
+  // Toggle Switch Pos 1 (DOWN)      = 1.72 V -> ADCH ~88
+  // Toggle Switch Pos 2 (UP)        = 1.29 V -> ADCH ~66
+  // Button SW2 pressed (solo)       = 0.99 V -> ADCH ~51 (enters bootloader)
+  // Button SW2 + Toggle 1 (DOWN)    = 0.82 V -> ADCH ~42 (enters bootloader)
+  // Button SW2 + Toggle 2 (UP)      = 0.70 V -> ADCH ~36 (enters bootloader)
+  //
+  // Calibrated threshold: 1.10 V (ADCH = 56)
+  // If val > 56: Button SW2 is NOT pressed -> skip bootloader and immediately run user sketch!
+  if (val > 56) {
     exitBootloader();
   }
 }
