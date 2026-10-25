@@ -42,15 +42,32 @@
 uint16_t resetVector RESET_SECTION = RJMP + BOOTLOADER_ADDRESS / 2;
 
 // LED Configuration
+// On ABK-20, the KS01 button bi-directional LED is wired between PB0 and PB1.
+// By defaulting LED_PIN to PB0 and grounding PB1 (0V), the speaker is completely
+// silent during bootloader wait/upload, and the button LED blinks clearly!
 #ifndef LED_PIN
-#define LED_PIN PB1
+#define LED_PIN PB0
 #endif
 
-#define LEDPORT (1 << LED_PIN)
-#define INITLED { DDRB |= LEDPORT; }
-#define LEDON { PORTB |= LEDPORT; }
-#define LEDOFF { PORTB &= ~LEDPORT; }
-#define TOGGLELED { PORTB ^= LEDPORT; }
+#if (LED_PIN == PB0)
+#define LEDPORT (1 << PB0)
+#define INITLED { \
+    DDRB |= (1 << PB0) | (1 << PB1); \
+    PORTB &= ~((1 << PB0) | (1 << PB1)); \
+}
+#define LEDON     { PORTB |= (1 << PB0); }
+#define LEDOFF    { PORTB &= ~(1 << PB0); }
+#define TOGGLELED { PORTB ^= (1 << PB0); }
+#else
+#define LEDPORT (1 << PB1)
+#define INITLED { \
+    DDRB |= (1 << PB0) | (1 << PB1); \
+    PORTB &= ~((1 << PB0) | (1 << PB1)); \
+}
+#define LEDON     { PORTB |= (1 << PB1); }
+#define LEDOFF    { PORTB &= ~(1 << PB1); }
+#define TOGGLELED { PORTB ^= (1 << PB1); }
+#endif
 
 #define INITDEBUGPIN
 #define DEBUGPINON
@@ -375,3 +392,4 @@ int main(void)
   a_main();
   return 0;
 }
+
