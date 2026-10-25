@@ -155,7 +155,7 @@
 // If you change this, please change BOOTLOADER_ADDRESS on Makefile too
 
 #ifndef BOOTLOADER_ADDRESS
-#define BOOTLOADER_ADDRESS     0x1C00               // bootloader start address at 0x1C00 = 7168
+#define BOOTLOADER_ADDRESS     0x1BC0               // bootloader start address at 0x1BC0 = 7104
 #endif
 
 //#define BOOTLOADER_ADDRESS     0x1800             // bootloader start address, e.g. 0x1800 = 6144, set .text to 0x0c00
@@ -537,7 +537,7 @@ void exitBootloader()
 {  
   memcpy_P (&start_appl_main, (PGM_P) BOOTLOADER_FUNC_ADDRESS, sizeof (start_appl_main));
 
-  if (start_appl_main)
+  if (start_appl_main && (uint16_t)start_appl_main != 0xFFFF)
   {
     resetRegister();
     (*start_appl_main) ();
@@ -554,6 +554,28 @@ void runProgramm(void)
   start_appl_main();
 }
 
+// Skipper button check on PB3 analog ladder
+static inline void checkBootloaderSkip(void)
+{
+  for (volatile uint8_t d = 0; d < 255; d++); // Voltage settling
+
+  // ADC3 on PB3, VCC reference, Left-adjust result (8-bit reading in ADCH)
+  ADMUX = (1 << ADLAR) | (1 << MUX1) | (1 << MUX0);
+  // Enable ADC, start first warm-up conversion, prescaler 64 (~250kHz @ 16MHz)
+  ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1);
+  while (ADCSRA & (1 << ADSC)); // wait for first conversion
+  ADCSRA |= (1 << ADSC);        // start 2nd conversion
+  while (ADCSRA & (1 << ADSC)); // wait for 2nd conversion
+  uint8_t val = ADCH;
+  ADCSRA = 0;                   // disable ADC to save power
+
+  // Calibrated threshold: ~1.14 V (ADCH = 58)
+  // If val > 58: Button SW2 is NOT pressed -> skip bootloader and immediately run user sketch!
+  if (val > 58) {
+    exitBootloader();
+  }
+}
+
 //***************************************************************************************
 // main loop
 //***************************************************************************************
@@ -562,6 +584,10 @@ static inline void a_main()
   uint8_t p;
   uint16_t time = WAITBLINKTIME;
   uint8_t timeout = BOOT_TIMEOUT;
+
+  for (volatile uint8_t d = 0; d < 255; d++);
+  while ((PINB & (1 << PB3)) == 0);
+  for (volatile uint8_t d = 0; d < 255; d++);
 
   p = PINVALUE;
 
@@ -692,6 +718,8 @@ int main()
   INITDEBUGPIN
   INITLED;
   INITAUDIOPORT;
+
+  checkBootloaderSkip();
 
   // Timer 2 normal mode, clk/8, count up from 0 to 255
   // ==> frequency @16MHz= 16MHz/8/256=7812.5Hz
