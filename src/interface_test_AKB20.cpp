@@ -277,9 +277,9 @@ void loop() {
 
     // 3. Pixels 7 & 12 (Rows 1 & 2, Middle): Strobe on Button SW2, breathing standby glow
     if (btn_pressed) {
-      // Brilliant Magenta / White strobe ONLY when Button SW2 is pressed!
+      // Both middle LEDs light up brilliant White when Button SW2 is pressed!
       pixels.setPixelColor(mIdx(2, 1), pixels.Color(255, 255, 255));
-      pixels.setPixelColor(mIdx(2, 2), pixels.Color(255, 0, 180));
+      pixels.setPixelColor(mIdx(2, 2), pixels.Color(255, 255, 255));
     } else {
       // Soft breathing purple glow in standby
       static uint8_t pulse = 0;
