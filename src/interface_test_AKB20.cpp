@@ -86,54 +86,57 @@ ISR(TIMER1_OVF_vect) {
   if (synth_mode == 1) { // Arpeggio mode (Toggle UP / Pos 2)
     uint8_t step = (arp_tick >> 10) & 0x03; // ~15 Hz arp rate
     cur_inc = ((uint32_t)phase_inc * arp_mult[step]) >> 2;
-  } else if (synth_mode == 2) { // Bunny Hop / Acid Sub-Bass (Toggle DOWN / Pos 1)
-    // Slide fader (fader_val) controls hop tempo (5 Hz to ~30 Hz)
-    uint8_t hop_speed = 3 + (fader_val >> 4); // 3 to 18
-    static uint16_t hop_phase = 0;
-    hop_phase += hop_speed;
-
-    uint8_t hop_cycle = (hop_phase >> 8) & 0x07; // 8-step hop loop (0..7)
-    uint8_t hop_sub = hop_phase & 0xFF;          // Sub-step ramp (0..255)
-
-    // Visual envelope decay
-    if (hop_beat_env > 4) hop_beat_env -= 4; else hop_beat_env = 0;
-
-    // Geometric bounce offsets with per-beat trigger
-    uint8_t bounce = 0;
-    switch (hop_cycle) {
-      case 0: bounce = 0;  if (hop_sub < 16) hop_beat_env = 240; break;
-      case 1: bounce = 7;  break;
-      case 2: bounce = 2;  break;
-      case 3: bounce = 12; if (hop_sub < 16) hop_beat_env = 200; break;
-      case 4: bounce = 4;  break;
-      case 5: bounce = 16; if (hop_sub < 16) hop_beat_env = 255; break;
-      case 6: bounce = 8;  break;
-      case 7: bounce = 1;  break;
-    }
-    hop_vis = bounce >> 2; // (0..4 for visual column levels)
-
-    // Sub-oscillator pitch modulation: base pitch / 2 (-1 Octave) + energetic bounce
-    cur_inc = (phase_inc >> 1) + ((uint32_t)phase_inc * bounce >> 6);
   }
 
-  // Button SW2 Pitch Mod: +1 Octave boost when held
+  // --- Bunny Hop Beat Engine (Toggle DOWN / Pos 1: synth_mode == 2) ---
+  static uint16_t hop_timer = 0;
+  static uint8_t  hop_env = 0;
+
+  if (synth_mode == 2) {
+    hop_timer++;
+    // Hop rate controlled by slide fader: slow lazy boings (fader down) to rapid bunny flutter (fader up)
+    uint16_t hop_interval = 3200 - (fader_val * 9); // ~200ms down to ~60ms
+    if (hop_timer >= hop_interval) {
+      hop_timer = 0;
+      hop_env = 240; // Trigger new cartoon boing hop!
+    }
+    if ((hop_timer & 7) == 0 && hop_env > 2) {
+      hop_env -= 3; // Snappy bouncy decay
+    }
+    hop_vis = hop_env >> 6; // 0..3 for matrix visual bounce
+    hop_beat_env = hop_env; // Full-resolution envelope for matrix strobe pulse
+
+    // Bouncy cartoon pitch curve: leaps up on hop and slides down to root
+    cur_inc += (cur_inc * hop_env) >> 7;
+  }
+
+  // Button SW2 Pitch Mod: +2 Octaves Kangaroo Squeak in Bunny mode, or +1 Octave boost
   if (sw2_held) {
-    cur_inc <<= 1;
+    if (synth_mode == 2) cur_inc <<= 2; // Mega Kangaroo Squeak (+2 Octaves!)
+    else cur_inc <<= 1;                 // Transpose +1 Octave up
   }
 
   phase_acc += cur_inc;
   uint8_t saw = phase_acc >> 8;
+  int16_t sample = 0;
 
-  int16_t sample = 128;
-  if (synth_wave == 0) {
-    // Triangle wave (sweet & mellow)
-    sample = (saw < 128) ? (saw << 1) : ((255 - saw) << 1);
-  } else if (synth_wave == 1) {
-    // Sawtooth wave (bright & rich)
+  if (synth_mode == 2) {
+    // Springy resonant rubber boing waveform
+    uint8_t boing = (saw * hop_env) >> 8;
+    saw = (saw + boing) ^ (boing >> 1);
     sample = saw;
   } else {
-    // Pulse wave with variable pulse width
-    sample = (saw > pulse_width) ? 220 : 35;
+    // Waveform generation based on slide fader
+    if (synth_wave == 0) {
+      // Triangle wave (sweet & mellow)
+      sample = (saw < 128) ? (saw << 1) : ((255 - saw) << 1);
+    } else if (synth_wave == 1) {
+      // Sawtooth wave (bright & rich)
+      sample = saw;
+    } else {
+      // Pulse wave with variable pulse width
+      sample = (saw > pulse_width) ? 220 : 35;
+    }
   }
 
   // Button SW2 overdrive/clip
